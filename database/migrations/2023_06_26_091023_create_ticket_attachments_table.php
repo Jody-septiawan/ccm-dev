@@ -13,7 +13,7 @@ class CreateTicketAttachmentsTable extends Migration
      */
     public function up()
     {
-        Schema::create('ticket_attacments', function (Blueprint $table) {
+        Schema::create('ticket_attachments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('ticket_id');
             $table->text('url');
@@ -33,6 +33,6 @@ class CreateTicketAttachmentsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('ticket_attacments');
+        Schema::dropIfExists('ticket_attachments');
     }
 }
