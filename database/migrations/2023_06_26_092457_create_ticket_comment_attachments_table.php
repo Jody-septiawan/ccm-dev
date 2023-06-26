@@ -16,7 +16,7 @@ class CreateTicketCommentAttachmentsTable extends Migration
         Schema::create('ticket_comment_attachments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('ticket_comment_id');
-            $table->text('url');
+            $table->string('url', 255);
             $table->string('filename', 50);
             $table->decimal('size', 10, 2);
             $table->string('type', 50);
