@@ -16,8 +16,14 @@ class CreateTicketHistoriesTable extends Migration
         Schema::create('ticket_histories', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('ticket_id');
-            $table->json('metadata');
-            $table->timestamps();
+            $table->unsignedBigInteger('user_id');
+            $table->string('title', 100);
+            $table->string('ticket_number', 150);
+            $table->enum('priority', ['low', 'medium', 'high']);
+            $table->enum('status', ['open', 'assigned', 'in progress', 'pending', 'rejected', 'resolved']);
+            $table->enum('category', ['category', 'delivery', 'service']);
+            $table->string('subcategory', 100);
+            $table->text('description');
 
             $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('cascade');
         });
