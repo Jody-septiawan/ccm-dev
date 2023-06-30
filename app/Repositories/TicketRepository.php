@@ -97,6 +97,14 @@ class TicketRepository
         return $model;
     }
 
+    /**
+     * Change ticket status
+     *
+     * @param int $id
+     * @param string $status
+     * 
+     * @return void
+     */
     public function updateStatus($id, $status)
     {
         $model = $this->model->find($id);

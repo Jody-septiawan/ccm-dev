@@ -133,6 +133,14 @@ class TicketController extends Controller
         }
     }
 
+    /**
+     * Change Ticket status
+     *
+     * @param Request $request
+     * @param int $id
+     * 
+     * @return void
+     */
     public function updateStatus(Request $request, $id)
     {
         try {
