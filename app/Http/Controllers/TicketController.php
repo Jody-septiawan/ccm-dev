@@ -21,14 +21,41 @@ class TicketController extends Controller
     }
 
     /**
-     * Store Ticket and Ticket Attachment data
+     * Display a listing of the Ticket and Ticket Attachment data
      *
      * @param Request $request
-     * @param StorageService $storageService
      * 
      * @return void
      */
-    public function store(Request $request, StorageService $storageService)
+    public function index(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'company_id' => 'required',
+            ]);
+    
+            if ($validator->fails()) 
+            {
+                $errors = $validator->errors();
+                return JsonResponse::errorValidation($errors);
+            }
+
+            $result = $this->ticketRepository->getTicketDatatable($request);
+
+            return $result;
+        } catch (Throwable $th) {
+            return JsonResponse::notFound($th->getMessage()); 
+        }
+    }
+
+    /**
+     * Store Ticket and Ticket Attachment data
+     *
+     * @param Request $request
+     * 
+     * @return void
+     */
+    public function store(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [

@@ -2,6 +2,8 @@
 
 namespace App\Repositories;
 
+use Illuminate\Http\Request;
+use JamesDordoy\LaravelVueDatatable\Http\Resources\DataTableCollectionResource;
 use App\Models\Ticket;
 
 class TicketRepository
@@ -35,5 +37,34 @@ class TicketRepository
         $model = $this->model->where('customer_pipeline_id', $customer_pipeline_id)->count();
 
         return $model;
+    }
+
+    /**
+     * Get all Ticket and Ticket Attachment data as datatable
+     *
+     * @param Request $request
+     * 
+     * @return void
+     */
+    public function getTicketDatatable(Request $request)
+    {
+        $company_id = $request->input('company_id');
+        $length = $request->input('length', '10');
+        $searchValue = $request->input('search');
+        $orderBy = $request->input('column', 'id');
+        $orderByDir = $request->input('dir', 'desc');
+
+        $model = $this->model->query();
+        $model->where('company_id', $company_id);
+        if (!empty($searchValue)) {
+            $model->where('title', 'like', "%$searchValue%");
+        }
+
+        $model->with(['attachments']);
+        $model->orderBy($orderBy, $orderByDir);
+
+        $data = $model->paginate($length);
+
+        return new DataTableCollectionResource($data);
     }
 }
