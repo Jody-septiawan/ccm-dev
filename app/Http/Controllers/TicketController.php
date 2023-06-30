@@ -132,4 +132,27 @@ class TicketController extends Controller
             return JsonResponse::error($th->getMessage()); 
         }
     }
+
+    public function updateStatus(Request $request, $id)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'status' => 'required|in:open,assigned,in progress,pending,rejected,resolved',
+            ]);
+    
+            if ($validator->fails()) 
+            {
+                $errors = $validator->errors();
+                return JsonResponse::errorValidation($errors);
+            }
+
+            $this->ticketRepository->updateStatus($id, $request->input('status'));
+
+            $result = $this->ticketRepository->getTicketById($id);
+
+            return JsonResponse::success($result, "Data berhasil diubah");
+        } catch (Throwable $th) {
+            return JsonResponse::error($th->getMessage()); 
+        }
+    }
 }

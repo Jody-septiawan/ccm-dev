@@ -89,4 +89,13 @@ class TicketRepository
 
         return $model;
     }
+
+    public function updateStatus($id, $status)
+    {
+        $model = $this->model->find($id);
+        $model->status = $status;
+        $model->save();
+
+        return $model;
+    }
 }
