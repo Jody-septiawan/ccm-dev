@@ -163,4 +163,68 @@ class TicketController extends Controller
             return JsonResponse::error($th->getMessage()); 
         }
     }
+
+    /**
+     * Destroy Ticket data by id
+     *
+     * @param int $id
+     * 
+     * @return void
+     */
+    public function destroy($id)
+    {
+        try {
+            $ticket = $this->ticketRepository->getTicketById($id);
+
+            if (!$ticket)
+            {
+                return JsonResponse::notFound("Data tidak ditemukan");
+            }
+
+            $result = $this->ticketRepository->destroy($id);
+
+            return JsonResponse::success($result, "Data berhasil dihapus");
+        } catch (Throwable $th) {
+            return JsonResponse::error($th->getMessage()); 
+        }
+    }
+
+    /**
+     * Destroy batch Ticket data by list id
+     *
+     * @param Request $request
+     * 
+     * @return void
+     */
+    public function destroyBatch(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'data' => 'required|array',
+            ]);
+    
+            if ($validator->fails()) 
+            {
+                $errors = $validator->errors();
+                return JsonResponse::errorValidation($errors);
+            }
+
+            $ids = $request->input('data');
+            
+            foreach ($ids as $id) {
+                $ticket = $this->ticketRepository->getTicketById($id);
+
+                if (!$ticket)
+                {
+                    return JsonResponse::notFound("Data tidak ditemukan");
+                }
+            }
+
+            $result = $this->ticketRepository->destroyBatch($ids);
+
+            return JsonResponse::success($ids, "Data berhasil dihapus");
+        } catch (Throwable $th) {
+            return JsonResponse::error($th->getMessage()); 
+        }
+    }
 }

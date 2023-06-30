@@ -113,4 +113,34 @@ class TicketRepository
 
         return $model;
     }
+
+    /**
+     * Destroy ticket data by id
+     *
+     * @param [type] $id
+     * 
+     * @return void
+     */
+    public function destroy($id)
+    {
+        $model = $this->model->find($id);
+        $model->delete();
+
+        return $model;
+    }
+
+    /**
+     * Destroy batch Ticket data by list id
+     *
+     * @param array $ids
+     * 
+     * @return void
+     */
+    public function destroyBatch($ids)
+    {
+        $model = $this->model->whereIn('id', $ids);
+        $model->delete();
+
+        return $model;
+    }
 }

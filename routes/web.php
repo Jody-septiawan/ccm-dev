@@ -25,6 +25,8 @@ $router->group(['prefix' => 'api'], function() use ($router) {
         $router->get('/', ['uses' => 'TicketController@index']);
         $router->get('/{id}', ['uses' => 'TicketController@show']);
         $router->put('/{id}/status', ['uses' => 'TicketController@updateStatus']);
+        $router->delete('/{id}', ['uses' => 'TicketController@destroy']);
+        $router->delete('/destroy/batch', ['uses' => 'TicketController@destroyBatch']);
     });
 
 });
