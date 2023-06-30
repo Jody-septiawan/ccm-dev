@@ -15,11 +15,19 @@ class TicketRepository
         $this->model = $model;
     }
     
+    /**
+     * Store Ticket data
+     *
+     * @param object $data
+     * 
+     * @return void
+     */
     public function store($data)
     {
         $model = new $this->model;
         $model->customer_pipeline_id = $data['customer_pipeline_id'];
         $model->user_id = $data['user_id'];
+        $model->company_id = $data['company_id'];
         $model->ticket_number = $data['ticket_number'];
         $model->title = $data['title'];
         $model->priority = $data['priority'];
@@ -32,6 +40,13 @@ class TicketRepository
         return $model;
     }
 
+    /**
+     * Count company ticket by customer pipeline id
+     *
+     * @param int $customer_pipeline_id
+     * 
+     * @return void
+     */
     public function countCompanyTicket($customer_pipeline_id)
     {
         $model = $this->model->where('customer_pipeline_id', $customer_pipeline_id)->count();

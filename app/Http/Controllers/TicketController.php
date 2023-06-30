@@ -61,6 +61,7 @@ class TicketController extends Controller
             $validator = Validator::make($request->all(), [
                 'customer_pipeline_id' => 'required',
                 'user_id' => 'required',
+                'company_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
                 'category' => 'required|in:category,delivery,service',
@@ -84,6 +85,7 @@ class TicketController extends Controller
             $data = [
                 'customer_pipeline_id' => $customer_pipeline_id,
                 'user_id' => $user_id,
+                'company_id' => $request->input('company_id'),
                 'ticket_number' => $ticketNumber,
                 'title' => $request->input('title'),
                 'priority' => $request->input('priority'),
