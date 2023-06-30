@@ -83,6 +83,13 @@ class TicketRepository
         return new DataTableCollectionResource($data);
     }
 
+    /**
+     * Get ticket and ticket attachment data by id
+     *
+     * @param int $id
+     * 
+     * @return void
+     */
     public function getTicketById($id)
     {
         $model = $this->model->with(['attachments'])->find($id);
