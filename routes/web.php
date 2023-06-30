@@ -23,6 +23,7 @@ $router->group(['prefix' => 'api'], function() use ($router) {
     $router->group(['prefix' => 'tickets'], function() use ($router) {
         $router->post('/', ['uses' => 'TicketController@store']);
         $router->get('/', ['uses' => 'TicketController@index']);
+        $router->get('/{id}', ['uses' => 'TicketController@show']);
     });
 
 });

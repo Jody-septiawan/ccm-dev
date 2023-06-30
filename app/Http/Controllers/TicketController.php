@@ -49,6 +49,24 @@ class TicketController extends Controller
     }
 
     /**
+     * Get Ticket and Ticket Attachment data by id
+     *
+     * @param int $id
+     * 
+     * @return void
+     */
+    public function show($id)
+    {
+        try {
+            $result = $this->ticketRepository->getTicketById($id);
+
+            return JsonResponse::success($result);
+        } catch (Throwable $th) {
+            return JsonResponse::notFound($th->getMessage()); 
+        }
+    }
+
+    /**
      * Store Ticket and Ticket Attachment data
      *
      * @param Request $request

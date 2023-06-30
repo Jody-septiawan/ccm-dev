@@ -82,4 +82,11 @@ class TicketRepository
 
         return new DataTableCollectionResource($data);
     }
+
+    public function getTicketById($id)
+    {
+        $model = $this->model->with(['attachments'])->find($id);
+
+        return $model;
+    }
 }
