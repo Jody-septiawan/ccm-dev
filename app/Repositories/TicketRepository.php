@@ -25,6 +25,7 @@ class TicketRepository
         $model = new $this->model;
         $model->customer_pipeline_id = $data['customer_pipeline_id'];
         $model->user_id = $data['user_id'];
+        $model->company_id = $data['company_id'];
         $model->ticket_number = $data['ticket_number'];
         $model->title = $data['title'];
         $model->priority = $data['priority'];
