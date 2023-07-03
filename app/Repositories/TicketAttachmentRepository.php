@@ -24,10 +24,10 @@ class TicketAttachmentRepository
      * 
      * @return void
      */
-    public function store(int $ticket_id, $urlPath, $filePath, $size, $type)
+    public function store(int $ticket_id, string $urlPath, string $filePath, string $size, string $type)
     {
         $model = new $this->model;
-        $model->ticket_id = $ticket_id;
+        $model->ticket_id = $ticket_id; 
         $model->url = $urlPath;
         $model->filename = $filePath;
         $model->size = $size;
