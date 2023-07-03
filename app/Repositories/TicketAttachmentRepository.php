@@ -3,17 +3,14 @@
 namespace App\Repositories;
 
 use App\Models\TicketAttachment;
-use App\Services\StorageService;
 
 class TicketAttachmentRepository
 {
     protected $model;
-    protected $storageService;
 
-    public function __construct(TicketAttachment $model, StorageService $storageService)
+    public function __construct(TicketAttachment $model)
     {
         $this->model = $model;
-        $this->storageService = $storageService;
     }
     
     /**
