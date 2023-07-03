@@ -17,10 +17,13 @@ class TicketAttachmentRepository
     }
     
     /**
-     * Store Ticket Attachment data
+     * Create Ticket Attachment
      *
-     * @param int $ticket_id
-     * @param object $file
+     * @param integer $ticket_id
+     * @param string $urlPath
+     * @param string $filePath
+     * @param string $size
+     * @param string $type
      * 
      * @return void
      */

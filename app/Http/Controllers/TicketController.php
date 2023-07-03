@@ -245,32 +245,44 @@ class TicketController extends Controller
         }
     }
 
+    /**
+     * Update ticket data
+     *
+     * @param Request $request
+     * @param integer $id
+     * 
+     * @return void
+     */
     public function update(Request $request, int $id)
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required',
-            'title' => 'required',
-            'priority' => 'required|in:low,medium,high',
-            'category' => 'required|in:category,delivery,service',
-            'subcategory' => 'required',
-            'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'user_id' => 'required',
+                'title' => 'required',
+                'priority' => 'required|in:low,medium,high',
+                'category' => 'required|in:category,delivery,service',
+                'subcategory' => 'required',
+                'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
+            ]);
 
-        if ($validator->fails()) 
-        {
-            $errors = $validator->errors();
-            return JsonResponse::errorValidation($errors);
+            if ($validator->fails()) 
+            {
+                $errors = $validator->errors();
+                return JsonResponse::errorValidation($errors);
+            }
+
+            $ticketExist = $this->ticketRepository->getTicketById($id);
+
+            if (!$ticketExist)
+            {
+                return JsonResponse::notFound("Data tidak ditemukan");
+            }
+
+            $result = $this->ticketRepository->update($id, $request->all());
+
+            return JsonResponse::success($result, "Data berhasil diubah");
+        } catch (Throwable $th) {
+            return JsonResponse::error($th->getMessage()); 
         }
-
-        $ticketExist = $this->ticketRepository->getTicketById($id);
-
-        if (!$ticketExist)
-        {
-            return JsonResponse::notFound("Data tidak ditemukan");
-        }
-
-        $result = $this->ticketRepository->update($id, $request->all());
-
-        return JsonResponse::success($result, "Data berhasil diubah");
     }
 }

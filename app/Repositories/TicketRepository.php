@@ -144,6 +144,13 @@ class TicketRepository
         return $model;
     }
 
+    /**
+     * Undocumented function
+     *
+     * @param integer $id
+     * @param object $data
+     * @return void
+     */
     public function update($id, $data)
     {
         $model = $this->model->find($id);

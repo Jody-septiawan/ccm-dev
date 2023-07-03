@@ -26,7 +26,7 @@ class UpdateFilenameAttachmentLengthToTicketAttachmentTable extends Migration
     public function down()
     {
         Schema::table('ticket_attachment', function (Blueprint $table) {
-            //
+            $table->string('filename')->change();
         });
     }
 }
