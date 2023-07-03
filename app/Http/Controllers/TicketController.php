@@ -95,15 +95,16 @@ class TicketController extends Controller
     
             $customer_pipeline_id = $request->input('customer_pipeline_id');
             $user_id = $request->input('user_id');
+            $company_id = $request->input('company_id');
 
             // Generate ticket number
             $countTicket = $this->ticketRepository->countCompanyTicket($customer_pipeline_id);
-            $ticketNumber = 'TICKET' . sprintf('%02d', $user_id) . sprintf('%03d', $countTicket + 1);
+            $ticketNumber = 'TICKET' . sprintf('%03d', $company_id) . sprintf('%03d', $countTicket + 1);
 
             $data = [
                 'customer_pipeline_id' => $customer_pipeline_id,
                 'user_id' => $user_id,
-                'company_id' => $request->input('company_id'),
+                'company_id' => $company_id,
                 'ticket_number' => $ticketNumber,
                 'title' => $request->input('title'),
                 'priority' => $request->input('priority'),
