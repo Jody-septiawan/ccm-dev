@@ -227,4 +227,24 @@ class TicketController extends Controller
             return JsonResponse::error($th->getMessage()); 
         }
     }
+
+    public function update(Request $request, int $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'customer_pipeline_id' => 'required',
+            'user_id' => 'required',
+            'company_id' => 'required',
+            'title' => 'required',
+            'priority' => 'required|in:low,medium,high',
+            'category' => 'required|in:category,delivery,service',
+            'subcategory' => 'required',
+            'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
+        ]);
+
+        if ($validator->fails()) 
+        {
+            $errors = $validator->errors();
+            return JsonResponse::errorValidation($errors);
+        }
+    }
 }
