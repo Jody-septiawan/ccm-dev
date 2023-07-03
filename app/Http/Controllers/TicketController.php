@@ -12,12 +12,10 @@ use App\Services\StorageService;
 class TicketController extends Controller
 {
     private $ticketRepository;
-    private $ticketAttachmentRepository;
 
-    public function __construct(TicketRepository $ticketRepository, TicketAttachmentRepository $ticketAttachmentRepository)
+    public function __construct(TicketRepository $ticketRepository)
     {
         $this->ticketRepository = $ticketRepository;
-        $this->ticketAttachmentRepository = $ticketAttachmentRepository;
     }
 
     /**
@@ -60,6 +58,10 @@ class TicketController extends Controller
         try {
             $result = $this->ticketRepository->getTicketById($id);
 
+            if (!$result) {
+                return JsonResponse::notFound("Data tidak ditemukan");
+            }
+
             return JsonResponse::success($result);
         } catch (Throwable $th) {
             return JsonResponse::notFound($th->getMessage()); 
@@ -73,7 +75,7 @@ class TicketController extends Controller
      * 
      * @return void
      */
-    public function store(Request $request)
+    public function store(Request $request, StorageService $storageService, TicketAttachmentRepository $ticketAttachmentRepository)
     {
         try {
             $validator = Validator::make($request->all(), [
@@ -98,7 +100,7 @@ class TicketController extends Controller
             $company_id = $request->input('company_id');
 
             // Generate ticket number
-            $countTicket = $this->ticketRepository->countCompanyTicket($customer_pipeline_id);
+            $countTicket = $this->ticketRepository->countCompanyTicket($company_id);
             $ticketNumber = 'TICKET' . sprintf('%03d', $company_id) . sprintf('%03d', $countTicket + 1);
 
             $data = [
@@ -122,7 +124,16 @@ class TicketController extends Controller
 
             if ($files) {
                 foreach ($files as $file) {
-                    $attachments[] = $this->ticketAttachmentRepository->store($result->id, $file);
+                    $filePath = $storageService->storage()->put('customer_case_management', $file, 'public');
+                    $urlPath = null;
+            
+                    if (app()->environment('production')) {
+                        $urlPath = config('app.do_space') . $filePath;
+                    } else {
+                        $urlPath = url('storage/' . $filePath);
+                    }
+
+                    $attachments[] = $ticketAttachmentRepository->store($result->id, $urlPath, $filePath, $file->getSize(), $file->getMimeType());
                 }
             }
 
@@ -155,9 +166,14 @@ class TicketController extends Controller
                 return JsonResponse::errorValidation($errors);
             }
 
-            $this->ticketRepository->updateStatus($id, $request->input('status'));
+            $ticketExist = $this->ticketRepository->getTicketById($id);
 
-            $result = $this->ticketRepository->getTicketById($id);
+            if (!$ticketExist) {
+                return JsonResponse::notFound("Data tidak ditemukan");
+            }
+
+            $result = $this->ticketRepository->updateStatus($id, $request->input('status'));
+
 
             return JsonResponse::success($result, "Data berhasil diubah");
         } catch (Throwable $th) {
@@ -232,9 +248,7 @@ class TicketController extends Controller
     public function update(Request $request, int $id)
     {
         $validator = Validator::make($request->all(), [
-            'customer_pipeline_id' => 'required',
             'user_id' => 'required',
-            'company_id' => 'required',
             'title' => 'required',
             'priority' => 'required|in:low,medium,high',
             'category' => 'required|in:category,delivery,service',
@@ -247,5 +261,16 @@ class TicketController extends Controller
             $errors = $validator->errors();
             return JsonResponse::errorValidation($errors);
         }
+
+        $ticketExist = $this->ticketRepository->getTicketById($id);
+
+        if (!$ticketExist)
+        {
+            return JsonResponse::notFound("Data tidak ditemukan");
+        }
+
+        $result = $this->ticketRepository->update($id, $request->all());
+
+        return JsonResponse::success($result, "Data berhasil diubah");
     }
 }

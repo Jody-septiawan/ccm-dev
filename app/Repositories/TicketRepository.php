@@ -40,16 +40,16 @@ class TicketRepository
         return $model;
     }
 
-    /**
-     * Count company ticket by customer pipeline id
+/**
+     * Count company ticket by company id
      *
-     * @param int $customer_pipeline_id
+     * @param int $company_id
      * 
      * @return void
      */
-    public function countCompanyTicket($customer_pipeline_id)
+    public function countCompanyTicket($company_id)
     {
-        $model = $this->model->where('customer_pipeline_id', $customer_pipeline_id)->count();
+        $model = $this->model->where('company_id', $company_id)->count();
 
         return $model;
     }
@@ -140,6 +140,20 @@ class TicketRepository
     {
         $model = $this->model->whereIn('id', $ids);
         $model->delete();
+
+        return $model;
+    }
+
+    public function update($id, $data)
+    {
+        $model = $this->model->find($id);
+        $model->user_id = $data['user_id'];
+        $model->title = $data['title'];
+        $model->priority = $data['priority'];
+        $model->category = $data['category'];
+        $model->subcategory = $data['subcategory'];
+        $model->description = $data['description'] ?? $model->description;
+        $model->save();
 
         return $model;
     }
