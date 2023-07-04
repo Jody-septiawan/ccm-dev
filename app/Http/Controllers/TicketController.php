@@ -20,6 +20,11 @@ class TicketController extends Controller
 
     /**
      * Display a listing of the Ticket and Ticket Attachment data
+     * --------------------------------------------
+     * Flow:
+     * 1. Get company_id from request and validate is required
+     * 2. Get all Ticket data by company_id using TicketRepository->getTicketDatatable()
+     * --------------------------------------------
      *
      * @param Request $request
      * 
@@ -28,10 +33,12 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         try {
+            // Validate request data
             $validator = Validator::make($request->all(), [
                 'company_id' => 'required',
             ]);
     
+            // Check if company_id is empty return error
             if ($validator->fails()) 
             {
                 $errors = $validator->errors();
@@ -48,14 +55,34 @@ class TicketController extends Controller
 
     /**
      * Get Ticket and Ticket Attachment data by id
+     * --------------------------------------------
+     * Flow:
+     * 1. Get id from parameter
+     * 2. Get Ticket data by id using TicketRepository->getTicketById()
+     * --------------------------------------------
      *
-     * @param int $id
+     * @param string $id
      * 
      * @return void
      */
-    public function show($id)
+    public function show(string $id)
     {
         try {
+            // Validate request data
+            $validator = Validator::make(['id' => $id], [
+                'id' => 'required|integer',
+            ]);
+    
+            // Check if id is empty or not integer return error
+            if ($validator->fails()) 
+            {
+                $errors = $validator->errors();
+                return JsonResponse::errorValidation($errors);
+            }
+
+            // Get Ticket data by id
+            // result variable will be null if data not found
+            // result variable will be object if data found
             $result = $this->ticketRepository->getTicketById($id);
 
             if (!$result) {
@@ -70,14 +97,25 @@ class TicketController extends Controller
 
     /**
      * Store Ticket and Ticket Attachment data
+     * --------------------------------------------
+     * Flow:
+     * 1. Get request data and validate
+     * 2. Generate ticket number
+     * 3. Store Ticket data using TicketRepository->store()
+     * 4. Upload attachment files
+     * 5. Store Ticket Attachment data using TicketAttachmentRepository->store()
+     * --------------------------------------------
      *
      * @param Request $request
+     * @param StorageService $storageService
+     * @param TicketAttachmentRepository $ticketAttachmentRepository
      * 
      * @return void
      */
     public function store(Request $request, StorageService $storageService, TicketAttachmentRepository $ticketAttachmentRepository)
     {
         try {
+            // Validate request data
             $validator = Validator::make($request->all(), [
                 'customer_pipeline_id' => 'required',
                 'user_id' => 'required',
@@ -89,20 +127,26 @@ class TicketController extends Controller
                 'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
             ]);
     
+            // Check if data is not equal validation return error
             if ($validator->fails()) 
             {
                 $errors = $validator->errors();
                 return JsonResponse::errorValidation($errors);
             }
     
+            // Get data from request
             $customer_pipeline_id = $request->input('customer_pipeline_id');
             $user_id = $request->input('user_id');
             $company_id = $request->input('company_id');
 
             // Generate ticket number
+            // Count ticket exist by company_id
+            // Add 1 to count ticket
+            // Generate ticket number with format TICKET{company_id}{count_ticket}
             $countTicket = $this->ticketRepository->countCompanyTicket($company_id);
             $ticketNumber = 'TICKET' . sprintf('%03d', $company_id) . sprintf('%03d', $countTicket + 1);
 
+            // Collect data to store
             $data = [
                 'customer_pipeline_id' => $customer_pipeline_id,
                 'user_id' => $user_id,
@@ -116,27 +160,39 @@ class TicketController extends Controller
                 'description' => $request->input('description'),
             ];
 
+            // Store ticket data
+            // result variabel will be object if data success to store
             $result = $this->ticketRepository->store($data);
 
             // Upload attachment files
+            // files variable will be null if no files uploaded
+            // files variable will be array if files uploaded
             $files = $request->file('attachments');
             $attachments = null;
 
+            // Check if files is not null
             if ($files) {
+                // Looping files
                 foreach ($files as $file) {
+                    // Store file to storage
                     $filePath = $storageService->storage()->put('customer_case_management', $file, 'public');
                     $urlPath = null;
             
+                    // Check if app environment is production
                     if (app()->environment('production')) {
+                        // Get file url from digital ocean space
                         $urlPath = config('app.do_space') . $filePath;
                     } else {
+                        // Get file url from storage
                         $urlPath = url('storage/' . $filePath);
                     }
 
+                    // Store ticket attachment data
                     $attachments[] = $ticketAttachmentRepository->store($result->id, $urlPath, $filePath, $file->getSize(), $file->getMimeType());
                 }
             }
 
+            // Add attachments data to result
             $result['attachments'] = $attachments;
             
             return JsonResponse::success($result, "Data berhasil ditambahkan");
@@ -147,33 +203,50 @@ class TicketController extends Controller
 
     /**
      * Change Ticket status
+     * --------------------------------------------
+     * Flow:
+     * 1. Get id from parameter
+     * 2. Get request data and validate
+     * 3. Check if ticket exist by id using TicketRepository->getTicketById()
+     * 4. Update Ticket status using TicketRepository->updateStatus()
+     * --------------------------------------------
      *
      * @param Request $request
-     * @param int $id
+     * @param string $id
      * 
      * @return void
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(Request $request, string $id)
     {
         try {
+            // Merge $id parameter to request data
+            $request->merge(['id' => $id]);
+
+            // Validate request data
             $validator = Validator::make($request->all(), [
+                'id' => 'required|integer',
                 'status' => 'required|in:open,assigned,in progress,pending,rejected,resolved',
             ]);
-    
+
+            // Check if data is not equal validation return error
             if ($validator->fails()) 
             {
                 $errors = $validator->errors();
                 return JsonResponse::errorValidation($errors);
             }
 
+            // Check if ticket exist
+            // ticketExist variable will be null if ticket not exist
+            // ticketExist variable will be object if ticket exist
             $ticketExist = $this->ticketRepository->getTicketById($id);
 
+            // Return error if ticket not exist
             if (!$ticketExist) {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
+            // Update ticket status
             $result = $this->ticketRepository->updateStatus($id, $request->input('status'));
-
 
             return JsonResponse::success($result, "Data berhasil diubah");
         } catch (Throwable $th) {
@@ -183,21 +256,44 @@ class TicketController extends Controller
 
     /**
      * Destroy Ticket data by id
+     * --------------------------------------------
+     * Flow:
+     * 1. Get id from parameter
+     * 2. Validate id
+     * 3. Check if ticket exist by id using TicketRepository->getTicketById()
+     * 4. Destroy ticket data by id using TicketRepository->destroy()
+     * --------------------------------------------
      *
-     * @param int $id
+     * @param string $id
      * 
      * @return void
      */
-    public function destroy($id)
+    public function destroy(string $id)
     {
         try {
-            $ticket = $this->ticketRepository->getTicketById($id);
-
-            if (!$ticket)
+            // Validate request data
+            $validator = Validator::make(['id' => $id], [
+                'id' => 'required|integer',
+            ]);
+    
+            // Check if id is empty or not integer return error
+            if ($validator->fails()) 
             {
+                $errors = $validator->errors();
+                return JsonResponse::errorValidation($errors);
+            }
+
+            // Get Ticket data by id
+            // result variable will be null if data not found
+            // result variable will be object if data found
+            $result = $this->ticketRepository->getTicketById($id);
+
+            // Return error if data not found
+            if (!$result) {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
+            // Destroy ticket data by id
             $result = $this->ticketRepository->destroy($id);
 
             return JsonResponse::success($result, "Data berhasil dihapus");
@@ -208,6 +304,13 @@ class TicketController extends Controller
 
     /**
      * Destroy batch Ticket data by list id
+     * --------------------------------------------
+     * Flow:
+     * 1. Get request data and validate
+     * 2. Looping ids
+     * 3. Check if ticket exist by id using TicketRepository->getTicketById()
+     * 4. Destroy batch ticket data by list id using TicketRepository->destroyBatch()
+     * --------------------------------------------
      *
      * @param Request $request
      * 
@@ -216,27 +319,34 @@ class TicketController extends Controller
     public function destroyBatch(Request $request)
     {
         try {
+            // Validate request data
             $validator = Validator::make($request->all(), [
                 'data' => 'required|array',
             ]);
     
+            // Check if data is empty or not array return error
             if ($validator->fails()) 
             {
                 $errors = $validator->errors();
                 return JsonResponse::errorValidation($errors);
             }
 
+            // Get list id from request data
             $ids = $request->input('data');
             
+            // Looping ids
             foreach ($ids as $id) {
+                // Get Ticket data by id
                 $ticket = $this->ticketRepository->getTicketById($id);
 
+                // Return error if data not found
                 if (!$ticket)
                 {
                     return JsonResponse::notFound("Data tidak ditemukan");
                 }
             }
 
+            // Destroy batch ticket data by list id
             $result = $this->ticketRepository->destroyBatch($ids);
 
             return JsonResponse::success($ids, "Data berhasil dihapus");
@@ -247,16 +357,28 @@ class TicketController extends Controller
 
     /**
      * Update ticket data
+     * --------------------------------------------
+     * Flow:
+     * 1. Get id from parameter
+     * 2. Get request data and validate
+     * 3. Check if ticket exist by id using TicketRepository->getTicketById()
+     * 4. Update ticket data by id using TicketRepository->update()
+     * --------------------------------------------
      *
      * @param Request $request
-     * @param integer $id
+     * @param string $id
      * 
      * @return void
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, string $id)
     {
         try {
+            // Merge $id parameter to request data
+            $request->merge(['id' => $id]);
+
+            // Validate request data
             $validator = Validator::make($request->all(), [
+                'id' => 'required|integer',
                 'user_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
@@ -265,19 +387,23 @@ class TicketController extends Controller
                 'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
             ]);
 
+            // Check if data is not equal validation return error
             if ($validator->fails()) 
             {
                 $errors = $validator->errors();
                 return JsonResponse::errorValidation($errors);
             }
 
+            // Check if ticket exist
             $ticketExist = $this->ticketRepository->getTicketById($id);
 
+            // Return error if ticket not exist
             if (!$ticketExist)
             {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
+            // Update ticket data
             $result = $this->ticketRepository->update($id, $request->all());
 
             return JsonResponse::success($result, "Data berhasil diubah");

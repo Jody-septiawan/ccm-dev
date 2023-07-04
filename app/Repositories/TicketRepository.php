@@ -18,11 +18,11 @@ class TicketRepository
     /**
      * Store Ticket data
      *
-     * @param object $data
+     * @param array $data
      * 
      * @return void
      */
-    public function store($data)
+    public function store(array $data)
     {
         $model = new $this->model;
         $model->customer_pipeline_id = $data['customer_pipeline_id'];
@@ -47,7 +47,7 @@ class TicketRepository
      * 
      * @return void
      */
-    public function countCompanyTicket($company_id)
+    public function countCompanyTicket(int $company_id)
     {
         $model = $this->model->where('company_id', $company_id)->count();
 
@@ -56,6 +56,20 @@ class TicketRepository
 
     /**
      * Get all Ticket and Ticket Attachment data as datatable
+     * ----------------------------
+     * Desc:
+     * This function is used for datatable in Ticket.vue,
+     * to get all Ticket and Ticket Attachment data
+     * and then show it as datatable.
+     * ----------------------------
+     * Filters:
+     * - company_id
+     * - length
+     * - search
+     * - column
+     * - dir
+     * - search by title
+     * ----------------------------
      *
      * @param Request $request
      * 
@@ -63,23 +77,30 @@ class TicketRepository
      */
     public function getTicketDatatable(Request $request)
     {
+        // Get all request
         $company_id = $request->input('company_id');
         $length = $request->input('length', '10');
         $searchValue = $request->input('search');
         $orderBy = $request->input('column', 'id');
         $orderByDir = $request->input('dir', 'desc');
 
+        // Get all data
         $model = $this->model->query();
         $model->where('company_id', $company_id);
+
+        // Search by title
         if (!empty($searchValue)) {
             $model->where('title', 'like', "%$searchValue%");
         }
 
+        // Relation to attachment and Order by
         $model->with(['attachments']);
         $model->orderBy($orderBy, $orderByDir);
 
+        // Paginate
         $data = $model->paginate($length);
 
+        // Return datatable collection resource
         return new DataTableCollectionResource($data);
     }
 
@@ -90,7 +111,7 @@ class TicketRepository
      * 
      * @return void
      */
-    public function getTicketById($id)
+    public function getTicketById(int $id)
     {
         $model = $this->model->with(['attachments'])->find($id);
 
@@ -98,15 +119,16 @@ class TicketRepository
     }
 
     /**
-     * Change ticket status
+     * Change ticket status by ticket id
      *
      * @param int $id
      * @param string $status
      * 
      * @return void
      */
-    public function updateStatus($id, $status)
+    public function updateStatus(int $id, string $status)
     {
+        // Find ticket by id and Change the status
         $model = $this->model->find($id);
         $model->status = $status;
         $model->save();
@@ -117,12 +139,13 @@ class TicketRepository
     /**
      * Destroy ticket data by id
      *
-     * @param [type] $id
+     * @param int $id
      * 
      * @return void
      */
-    public function destroy($id)
+    public function destroy(int $id)
     {
+        // Find ticket by id and Delete the ticket
         $model = $this->model->find($id);
         $model->delete();
 
@@ -136,8 +159,9 @@ class TicketRepository
      * 
      * @return void
      */
-    public function destroyBatch($ids)
+    public function destroyBatch(array $ids)
     {
+        // Find ticket by id and Delete the ticket
         $model = $this->model->whereIn('id', $ids);
         $model->delete();
 
@@ -145,13 +169,14 @@ class TicketRepository
     }
 
     /**
-     * Undocumented function
+     * Update ticket data by id
      *
-     * @param integer $id
-     * @param object $data
+     * @param int $id
+     * @param array $data
+     * 
      * @return void
      */
-    public function update($id, $data)
+    public function update(int $id, array $data)
     {
         $model = $this->model->find($id);
         $model->user_id = $data['user_id'];
