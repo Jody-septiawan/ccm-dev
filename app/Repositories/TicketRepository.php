@@ -94,7 +94,7 @@ class TicketRepository
         }
 
         // Relation to attachment and Order by
-        $model->with(['attachments']);
+        $model->with(['attachments', 'comments.attachments']);
         $model->orderBy($orderBy, $orderByDir);
 
         // Paginate

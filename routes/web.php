@@ -28,6 +28,9 @@ $router->group(['prefix' => 'api', 'as' => 'api.'], function() use ($router) {
         $router->post('/{id}', ['as' => 'update', 'uses' => 'TicketController@update']);
         $router->delete('/{id}', ['as' => 'destroy', 'uses' => 'TicketController@destroy']);
         $router->delete('/destroy/batch', ['as' => 'destroyBatch', 'uses' => 'TicketController@destroyBatch']);
-    });
 
+        $router->group(['prefix' => 'comments', 'as' => 'comments.'], function() use ($router) {
+            $router->post('/{id}', ['as' => 'store', 'uses' => 'TicketCommentController@store']);
+        });
+    });
 });

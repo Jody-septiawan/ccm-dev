@@ -12,4 +12,9 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketAttachment::class, "ticket_id");
     }
+
+    public function comments()
+    {
+        return $this->hasMany(TicketComment::class, "ticket_id");
+    }
 }
