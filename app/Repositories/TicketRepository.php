@@ -113,7 +113,7 @@ class TicketRepository
      */
     public function getTicketById(int $id)
     {
-        $model = $this->model->with(['attachments'])->find($id);
+        $model = $this->model->with(['attachments', 'comments.attachments'])->find($id);
 
         return $model;
     }

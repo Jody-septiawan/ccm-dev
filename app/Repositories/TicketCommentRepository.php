@@ -32,4 +32,35 @@ class TicketCommentRepository
 
         return $model;
     }
+
+    /**
+     * Update Ticket comment data
+     *
+     * @param string $message
+     * @param integer $id
+     * 
+     * @return void
+     */
+    public function update(string $message, int $id)
+    {
+        $model = $this->model->with(['attachments'])->findOrFail($id);
+        $model->message = $message;
+        $model->save();
+
+        return $model;
+    }
+
+    /**
+     * Get Ticket comment by id
+     *
+     * @param integer $id
+     * 
+     * @return void
+     */
+    public function getById(int $id)
+    {
+        $model = $this->model->with(['attachments'])->find($id);
+
+        return $model;
+    }
 }

@@ -36,4 +36,34 @@ class TicketCommentAttachmentRepository
 
         return $model;
     }
+
+    /**
+     * Get Ticket Comment Attachment by id
+     *
+     * @param integer $id
+     * 
+     * @return void
+     */
+    public function getById(int $id)
+    {
+        $model = $this->model->find($id);
+
+        return $model;
+    }
+
+    /**
+     * Destroy batch Ticket Comment Attachment by ids
+     *
+     * @param array $ids
+     * 
+     * @return void
+     */
+    public function destroyBatch(array $ids)
+    {
+        // Find ticket comment attachment by id and Delete the attachment
+        $model = $this->model->whereIn('id', $ids);
+        $model->delete();
+
+        return $model;
+    }
 }
