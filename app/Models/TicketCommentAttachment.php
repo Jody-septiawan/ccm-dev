@@ -8,7 +8,7 @@ class TicketCommentAttachment extends Model
 {
     protected $guarded = [];
 
-    public function ticketCommets()
+    public function ticketComments()
     {
         return $this->belongsTo(TicketComment::class);
     }
