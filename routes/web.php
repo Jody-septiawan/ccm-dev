@@ -40,5 +40,7 @@ $router->group(['prefix' => 'api', 'as' => 'api.'], function() use ($router) {
             });
         });
 
+        $router->get('/members', ['as' => 'getCompanyMembers', 'uses' => 'TicketController@getCompanyMembers']);
+
     });
 });

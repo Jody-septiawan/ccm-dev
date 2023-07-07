@@ -8,6 +8,7 @@ use App\Libs\Json\JsonResponse;
 use App\Repositories\TicketRepository;
 use App\Repositories\TicketAttachmentRepository;
 use App\Services\StorageService;
+use App\Services\ExternalAPIs\CrmAPI;
 
 class TicketController extends Controller
 {
@@ -407,6 +408,18 @@ class TicketController extends Controller
             $result = $this->ticketRepository->update($id, $request->all());
 
             return JsonResponse::success($result, "Data berhasil diubah");
+        } catch (Throwable $th) {
+            return JsonResponse::error($th->getMessage()); 
+        }
+    }
+
+    public function getCompanyMembers()
+    {
+        try {
+            $crmAPI = new CrmAPI();
+            $response = $crmAPI->get('crm/category');
+
+            return JsonResponse::success($response, "Data berhasil diambil");
         } catch (Throwable $th) {
             return JsonResponse::error($th->getMessage()); 
         }
