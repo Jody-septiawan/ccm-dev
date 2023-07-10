@@ -26,10 +26,10 @@ class AuthTokenMiddleware
 
         // return ['test' => 'test'];
 
-        $crmAPI = new CrmAPI();
-        $data = $crmAPI->get('crm/category');
+        // $crmAPI = new CrmAPI();
+        // $data = $crmAPI->get('crm/category');
 
-        return $data;
+        // return $data;
 
         // $user = [
         //     'id' => '1',
@@ -37,10 +37,10 @@ class AuthTokenMiddleware
         //     'email' => 'joy@mail.com'
         // ]
 
-        // $response = $next($request);
+        $response = $next($request);
 
         // Post-Middleware Action
 
-        // return $response;
+        return $response;
     }
 }

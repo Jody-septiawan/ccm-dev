@@ -3,6 +3,7 @@
 namespace App\Services\ExternalAPIs;
 
 use GuzzleHttp\Client;
+use App\Libs\Json\JsonResponse;
 
 class CrmAPI {
     public $client;
@@ -16,11 +17,15 @@ class CrmAPI {
 
     public function get(string $url, array $params = [])
     {
-        $response = $this->client->request('GET', $url, [
-            'query' => $params
-        ]);
-
-        return json_decode($response->getBody()->getContents());
+        try {
+            $response = $this->client->request('GET', $url, [
+                'query' => $params
+            ]);
+    
+            return json_decode($response->getBody()->getContents());
+        } catch (RequestException $th) {
+            return $e->hasResponse();
+        }
     }
 
     public function create(string $url, array $data)

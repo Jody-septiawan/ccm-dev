@@ -416,7 +416,6 @@ class TicketController extends Controller
     public function getCompanyMembers(Request $request)
     {
         try {
-            return $request->all();
             $crmAPI = new CrmAPI();
             $response = $crmAPI->get('crm/category');
 

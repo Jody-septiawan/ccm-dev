@@ -5,6 +5,7 @@ namespace App\Repositories;
 use Illuminate\Http\Request;
 use JamesDordoy\LaravelVueDatatable\Http\Resources\DataTableCollectionResource;
 use App\Models\Ticket;
+use App\Services\ExternalAPIs\CrmAPI;
 
 class TicketRepository
 {
@@ -99,6 +100,17 @@ class TicketRepository
 
         // Paginate
         $data = $model->paginate($length);
+
+        $crmAPI = new CrmAPI();
+        $customer_pipeline_id = 2;
+        $response = $crmAPI->get("crm/customer/pipeline/$customer_pipeline_id");
+
+        return ['responsessss' => $response];
+        // return $response;
+
+        foreach ($data as $item) {
+            $item->title = "goks";
+        }
 
         // Return datatable collection resource
         return new DataTableCollectionResource($data);
