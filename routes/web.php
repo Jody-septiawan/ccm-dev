@@ -40,7 +40,7 @@ $router->group(['prefix' => 'api', 'as' => 'api.'], function() use ($router) {
             });
         });
 
-        $router->get('/members', ['as' => 'getCompanyMembers', 'uses' => 'TicketController@getCompanyMembers']);
+        $router->get('/members', ['as' => 'getCompanyMembers', 'middleware' => 'auth.token', 'uses' => 'TicketController@getCompanyMembers']);
 
     });
 });
