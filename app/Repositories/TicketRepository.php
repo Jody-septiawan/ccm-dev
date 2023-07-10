@@ -101,15 +101,11 @@ class TicketRepository
         // Paginate
         $data = $model->paginate($length);
 
-        $crmAPI = new CrmAPI();
-        $customer_pipeline_id = 2;
-        $response = $crmAPI->get("crm/customer/pipeline/$customer_pipeline_id");
-
-        return ['responsessss' => $response];
-        // return $response;
-
         foreach ($data as $item) {
-            $item->title = "goks";
+            $crmAPI = new CrmAPI();
+            $response = $crmAPI->get("crm/customer/pipeline/$item->customer_pipeline_id");
+
+            $item->customer_pipeline = $response->data;
         }
 
         // Return datatable collection resource
@@ -126,6 +122,10 @@ class TicketRepository
     public function getTicketById(int $id)
     {
         $model = $this->model->with(['attachments', 'comments.attachments'])->find($id);
+
+        $crmAPI = new CrmAPI();
+        $response = $crmAPI->get("crm/customer/pipeline/$model->customer_pipeline_id");
+        $model->customer_pipeline = $response->data;
 
         return $model;
     }
