@@ -13,8 +13,15 @@ class ChangeCategoryEnumCategoryToProductToTicketTable extends Migration
      */
     public function up()
     {
-        DB::statement("ALTER TABLE tickets MODIFY category ENUM('product', 'delivery', 'service') NOT NULL");
+        Schema::table('tickets', function (Blueprint $table) {
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->enum('category', ['product', 'delivery', 'service'])->change();
+            } else {
+                $table->string('category', 20)->change();
+            }
+        });
     }
+    
 
     /**
      * Reverse the migrations.
@@ -23,6 +30,13 @@ class ChangeCategoryEnumCategoryToProductToTicketTable extends Migration
      */
     public function down()
     {
-        DB::statement("ALTER TABLE tickets MODIFY category ENUM('category', 'delivery', 'service') NOT NULL");
+        Schema::table('tickets', function (Blueprint $table) {
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->enum('category', ['category', 'delivery', 'service'])->change();
+            } else {
+                $table->string('category', 20)->change();
+            }
+        });
     }
+    
 }
