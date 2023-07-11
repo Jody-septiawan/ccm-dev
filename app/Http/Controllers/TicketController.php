@@ -122,7 +122,7 @@ class TicketController extends Controller
                 'company_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
-                'category' => 'required|in:category,delivery,service',
+                'category' => 'required|in:product,delivery,service',
                 'subcategory' => 'required',
                 'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
             ]);
