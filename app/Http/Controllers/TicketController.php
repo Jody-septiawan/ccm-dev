@@ -157,7 +157,6 @@ class TicketController extends Controller
         try {
             // Validate request data
             $validator = Validator::make($request->all(), [
-                // 'customer_pipeline_id' => 'required',
                 'user_id' => 'required',
                 'company_id' => 'required',
                 'title' => 'required',
