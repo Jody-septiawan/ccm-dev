@@ -4,8 +4,8 @@ namespace App\Repositories;
 
 use Illuminate\Http\Request;
 use JamesDordoy\LaravelVueDatatable\Http\Resources\DataTableCollectionResource;
+use Illuminate\Support\Facades\DB;
 use App\Models\Ticket;
-use App\Services\ExternalAPIs\CrmAPI;
 
 class TicketRepository
 {
@@ -85,6 +85,14 @@ class TicketRepository
         $orderBy = $request->input('column', 'id');
         $orderByDir = $request->input('dir', 'desc');
 
+        $ticket_number = $request->input('ticket_number');
+        $priority = $request->input('priority');
+        $status = $request->input('status');
+        $category = $request->input('category');
+        $assigned_to = $request->input('assigned_to');
+        $startDate = $request->input('startDate');
+        $endDate = $request->input('endDate');
+
         // Get all data
         $model = $this->model->query();
         $model->where('company_id', $company_id);
@@ -92,6 +100,30 @@ class TicketRepository
         // Search by title
         if (!empty($searchValue)) {
             $model->where('title', 'like', "%$searchValue%");
+        };
+
+        if (!empty($ticket_number)) {
+            $model->where('ticket_number', $ticket_number);
+        };
+
+        if (!empty($priority)) {
+            $model->where('priority', $priority);
+        };
+
+        if (!empty($status)) {
+            $model->where('status', $status);
+        };
+
+        if (!empty($category)) {
+            $model->where('category', $category);
+        };
+
+        if (!empty($assigned_to)) {
+            $model->where('user_id', $assigned_to);
+        };
+
+        if ($startDate && $endDate) {
+            $model->whereBetween('created_at', [$startDate, $endDate]);
         }
 
         // Relation to attachment and Order by
@@ -101,13 +133,6 @@ class TicketRepository
         // Paginate
         $data = $model->paginate($length);
 
-        foreach ($data as $item) {
-            $crmAPI = new CrmAPI();
-            $response = $crmAPI->get("crm/customer/pipeline/$item->customer_pipeline_id");
-
-            $item->customer_pipeline = $response->data;
-        }
-
         // Return datatable collection resource
         return new DataTableCollectionResource($data);
     }
@@ -115,20 +140,23 @@ class TicketRepository
     /**
      * Get ticket and ticket attachment data by id
      *
-     * @param int $id
+     * @param string $searchValue
      * 
      * @return void
      */
-    public function getTicketById(int $id)
+    public function getTicketById(string $searchValue)
     {
-        $model = $this->model->with(['attachments', 'comments.attachments'])->find($id);
+        $model = $this->model->query();
+        $model->with(['attachments', 'comments.attachments']);
+        $model->where(function ($model) use ($searchValue) {
+            $model->where('id', $searchValue)
+                ->orWhere('ticket_number', $searchValue);
+        });
 
-        $crmAPI = new CrmAPI();
-        $response = $crmAPI->get("crm/customer/pipeline/$model->customer_pipeline_id");
-        $model->customer_pipeline = $response->data;
-
-        return $model;
+        return $model->first();
     }
+
+
 
     /**
      * Change ticket status by ticket id
@@ -190,7 +218,7 @@ class TicketRepository
      */
     public function update(int $id, array $data)
     {
-        $model = $this->model->find($id);
+        $model = $this->model->with(['attachments', 'comments.attachments'])->find($id);
         $model->user_id = $data['user_id'];
         $model->title = $data['title'];
         $model->priority = $data['priority'];
@@ -201,4 +229,33 @@ class TicketRepository
 
         return $model;
     }
+
+    public function statistics(int $company_id)
+    {
+        $model = $this->model->query();
+        $model->where('company_id', $company_id);
+    
+        $totalTickets = $model->count();
+    
+        $statusCounts = $model->select('status', DB::raw('COUNT(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status');
+    
+        $allStatus = ['open', 'assigned', 'inProgress', 'pending', 'rejected', 'resolved'];
+
+        $statusData = [];
+        
+        foreach ($allStatus as $status) {
+            $count = $statusCounts[$status] ?? 0;
+            $statusData[$status] = $count;
+        }
+        
+        $ticketStatistic = [
+            'total' => $totalTickets,
+            'status' => $statusData,
+        ];
+    
+        return $ticketStatistic;
+    }
+    
 }

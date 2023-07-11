@@ -48,6 +48,21 @@ class TicketController extends Controller
 
             $result = $this->ticketRepository->getTicketDatatable($request);
 
+            foreach ($result as $item) {
+                $crmAPI = new CrmAPI();
+
+                // Get customer pipeline data by id
+                if ($item->customer_pipeline_id) {
+                    $customer_pipeline = $crmAPI->get("crm/customer/pipeline/detail/$item->customer_pipeline_id");
+                    $item->customer_pipeline = $customer_pipeline->data;
+                }
+
+                // Get user assigned to ticket data by id
+                $assigned_to = $crmAPI->get("crm/company/member/$item->user_id");
+                $item->assigned_to = $assigned_to->data;
+            };
+    
+
             return $result;
         } catch (Throwable $th) {
             return JsonResponse::notFound($th->getMessage()); 
@@ -71,7 +86,7 @@ class TicketController extends Controller
         try {
             // Validate request data
             $validator = Validator::make(['id' => $id], [
-                'id' => 'required|integer',
+                'id' => 'required',
             ]);
     
             // Check if id is empty or not integer return error
@@ -89,6 +104,23 @@ class TicketController extends Controller
             if (!$result) {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
+
+            $crmAPI = new CrmAPI();
+
+            // Get customer pipeline data by id
+            if ($result->customer_pipeline_id) {
+                $customer_pipeline = $crmAPI->get("crm/customer/pipeline/detail/$result->customer_pipeline_id");
+                $result->customer_pipeline = $customer_pipeline->data;
+            }
+
+            // Get user assigned to ticket data by id
+            $assigned_to = $crmAPI->get("crm/company/member/$result->user_id");
+            $result->assigned_to = $assigned_to->data;
+
+            // Get user comments
+            foreach ($result->comments as $comment) {
+                $comment->sender = $crmAPI->get("crm/company/member/$comment->user_id")->data;
+            };
 
             return JsonResponse::success($result);
         } catch (Throwable $th) {
@@ -118,12 +150,12 @@ class TicketController extends Controller
         try {
             // Validate request data
             $validator = Validator::make($request->all(), [
-                'customer_pipeline_id' => 'required',
+                // 'customer_pipeline_id' => 'required',
                 'user_id' => 'required',
                 'company_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
-                'category' => 'required|in:category,delivery,service',
+                'category' => 'required|in:product,delivery,service',
                 'subcategory' => 'required',
                 'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
             ]);
@@ -371,7 +403,7 @@ class TicketController extends Controller
      * 
      * @return void
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id, StorageService $storageService, TicketAttachmentRepository $ticketAttachmentRepository)
     {
         try {
             // Merge $id parameter to request data
@@ -383,9 +415,11 @@ class TicketController extends Controller
                 'user_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
-                'category' => 'required|in:category,delivery,service',
+                'category' => 'required|in:product,delivery,service',
                 'subcategory' => 'required',
-                'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
+                "newAttachments" => "array",
+                "newAttachments.*" => "mimes:jpeg,jpg,png,gif,mp4",
+                "deleteAttachmentIds" => "array",
             ]);
 
             // Check if data is not equal validation return error
@@ -404,6 +438,51 @@ class TicketController extends Controller
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
+            // Get attachment data
+            $deleteAttachmentIds = $request->input('deleteAttachmentIds');
+            $files = $request->file('newAttachments');
+
+            // Check if deleteAttachmentIds is not null
+            if ($deleteAttachmentIds) {
+                // Looping ids
+                foreach ($deleteAttachmentIds as $deleteAttachmentId) {
+                    // Get attachment data by id
+                    $attachment = $ticketAttachmentRepository->getById($deleteAttachmentId);
+
+                    // Return error if data not found
+                    if (!$attachment)
+                    {
+                        return JsonResponse::notFound("Data attachment tidak ditemukan");
+                    }
+                }
+
+                // Delete attachment data
+                $ticketAttachmentRepository->destroyBatch($deleteAttachmentIds);
+            }
+
+            
+            // Check if files is not null
+            if ($files) {
+                // Looping files
+                foreach ($files as $file) {
+                    // Store file to storage
+                    $filePath = $storageService->storage()->put('customer_case_management', $file, 'public');
+                    $urlPath = null;
+            
+                    // Check if app environment is production
+                    if (app()->environment('production')) {
+                        // Get file url from digital ocean space
+                        $urlPath = config('app.do_space') . $filePath;
+                    } else {
+                        // Get file url from storage
+                        $urlPath = url('storage/' . $filePath);
+                    }
+
+                    // Store ticket attachment data
+                    $ticketAttachmentRepository->store($id, $urlPath, $filePath, $file->getSize(), $file->getMimeType());
+                }
+            }
+
             // Update ticket data
             $result = $this->ticketRepository->update($id, $request->all());
 
@@ -413,13 +492,27 @@ class TicketController extends Controller
         }
     }
 
-    public function getCompanyMembers(Request $request)
+    public function statistics(Request $request)
     {
         try {
-            $crmAPI = new CrmAPI();
-            $response = $crmAPI->get('crm/category');
+            // Validate request data
+            $validator = Validator::make($request->all(), [
+                'company_id' => 'required',
+            ]);
+    
+            // Check if company_id is empty return error
+            if ($validator->fails()) 
+            {
+                $errors = $validator->errors();
+                return JsonResponse::errorValidation($errors);
+            }
 
-            return JsonResponse::success($response, "Data berhasil diambil");
+            $company_id = $request->input('company_id');
+
+            // Get statistics data
+            $result = $this->ticketRepository->statistics($company_id);
+
+            return JsonResponse::success($result, "Data berhasil diambil");
         } catch (Throwable $th) {
             return JsonResponse::error($th->getMessage()); 
         }
