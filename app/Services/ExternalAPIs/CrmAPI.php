@@ -15,6 +15,14 @@ class CrmAPI {
         $this->client = new Client(['base_uri' => $this->baseUrl]);
     }
 
+    /**
+     * Get data from API
+     *
+     * @param string $url
+     * @param array $params
+     * 
+     * @return void
+     */
     public function get(string $url, array $params = [])
     {
         try {
@@ -28,6 +36,14 @@ class CrmAPI {
         }
     }
 
+    /**
+     * Create data from API
+     *
+     * @param string $url
+     * @param array $params
+     * 
+     * @return void
+     */
     public function create(string $url, array $data)
     {
         $response = $this->client->request('POST', $url, [
@@ -37,6 +53,14 @@ class CrmAPI {
         return json_decode($response->getBody()->getContents());
     }
 
+    /**
+     * Update data from API
+     *
+     * @param string $url
+     * @param array $params
+     * 
+     * @return void
+     */
     public function update(string $url, array $data)
     {
         $response = $this->client->request('PUT', $url, [
@@ -46,6 +70,14 @@ class CrmAPI {
         return json_decode($response->getBody()->getContents());
     }
 
+    /**
+     * Delete data from API
+     *
+     * @param string $url
+     * @param array $params
+     * 
+     * @return void
+     */
     public function delete(string $url)
     {
         $response = $this->client->request('DELETE', $url);

@@ -66,10 +66,16 @@ class TicketRepository
      * Filters:
      * - company_id
      * - length
-     * - search
+     * - search by title
      * - column
      * - dir
-     * - search by title
+     * - ticket_number
+     * - priority
+     * - status
+     * - category
+     * - assigned_to as user_id
+     * - startDate
+     * - endDate
      * ----------------------------
      *
      * @param Request $request
@@ -156,8 +162,6 @@ class TicketRepository
         return $model->first();
     }
 
-
-
     /**
      * Change ticket status by ticket id
      *
@@ -230,13 +234,23 @@ class TicketRepository
         return $model;
     }
 
+    /**
+     * Get ticket statistic by company id
+     *
+     * @param int $company_id
+     * 
+     * @return void
+     */
     public function statistics(int $company_id)
     {
+        // Get data by company id
         $model = $this->model->query();
         $model->where('company_id', $company_id);
     
+        // Get total ticket
         $totalTickets = $model->count();
     
+        // Get status ticket and count
         $statusCounts = $model->select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
             ->pluck('count', 'status');

@@ -79,7 +79,6 @@ $app->configure('app');
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
     'auth.token' => App\Http\Middleware\AuthTokenMiddleware::class,
-
 ]);
 
 /*
