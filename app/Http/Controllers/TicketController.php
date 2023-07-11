@@ -25,6 +25,9 @@ class TicketController extends Controller
      * Flow:
      * 1. Get company_id from request and validate is required
      * 2. Get all Ticket data by company_id using TicketRepository->getTicketDatatable()
+     * 3. Get all Ticket Attachment data by company_id using TicketAttachmentRepository->getTicketAttachmentDatatable()
+     * 4. Get user assigned to ticket data by id
+     * 5. Get user comments
      * --------------------------------------------
      *
      * @param Request $request
@@ -48,6 +51,7 @@ class TicketController extends Controller
 
             $result = $this->ticketRepository->getTicketDatatable($request);
 
+            // Get user assigned to ticket data by id
             foreach ($result as $item) {
                 $crmAPI = new CrmAPI();
 
@@ -75,6 +79,8 @@ class TicketController extends Controller
      * Flow:
      * 1. Get id from parameter
      * 2. Get Ticket data by id using TicketRepository->getTicketById()
+     * 3. Get user assigned to ticket data by id
+     * 4. Get user comments
      * --------------------------------------------
      *
      * @param string $id
@@ -105,6 +111,7 @@ class TicketController extends Controller
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
+            // Get user assigned to ticket data by id
             $crmAPI = new CrmAPI();
 
             // Get customer pipeline data by id
@@ -492,6 +499,19 @@ class TicketController extends Controller
         }
     }
 
+    /**
+     * Get ticket statictics by company id
+     * --------------------------------------------
+     * Flow:
+     * 1. Get request data and validate
+     * 2. Get company_id from request data
+     * 3. Get statistics data using TicketRepository->statistics()
+     * --------------------------------------------
+     *
+     * @param Request $request
+     * 
+     * @return void
+     */
     public function statistics(Request $request)
     {
         try {
