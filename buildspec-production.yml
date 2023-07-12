@@ -44,7 +44,7 @@ phases:
 
       # - git clone $REPO_GITHUB_URL
       # - cd /app.gabung.in && git checkout develop-v2
-      - docker build --cache-from=app -f Dockerfile.aws -t $REPOSITORY_URI:latest .
+      - docker build -f Dockerfile.aws -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
