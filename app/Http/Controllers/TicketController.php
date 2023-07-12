@@ -8,6 +8,7 @@ use App\Libs\Json\JsonResponse;
 use App\Repositories\TicketRepository;
 use App\Repositories\TicketAttachmentRepository;
 use App\Services\StorageService;
+use App\Services\ExternalAPIs\CrmAPI;
 
 class TicketController extends Controller
 {
@@ -24,6 +25,9 @@ class TicketController extends Controller
      * Flow:
      * 1. Get company_id from request and validate is required
      * 2. Get all Ticket data by company_id using TicketRepository->getTicketDatatable()
+     * 3. Get all Ticket Attachment data by company_id using TicketAttachmentRepository->getTicketAttachmentDatatable()
+     * 4. Get user assigned to ticket data by id
+     * 5. Get user comments
      * --------------------------------------------
      *
      * @param Request $request
@@ -47,6 +51,22 @@ class TicketController extends Controller
 
             $result = $this->ticketRepository->getTicketDatatable($request);
 
+            // Get user assigned to ticket data by id
+            foreach ($result as $item) {
+                $crmAPI = new CrmAPI();
+
+                // Get customer pipeline data by id
+                if ($item->customer_pipeline_id) {
+                    $customer_pipeline = $crmAPI->get("crm/customer/pipeline/detail/$item->customer_pipeline_id");
+                    $item->customer_pipeline = $customer_pipeline->data;
+                }
+
+                // Get user assigned to ticket data by id
+                $assigned_to = $crmAPI->get("crm/company/member/$item->user_id");
+                $item->assigned_to = $assigned_to->data;
+            };
+    
+
             return $result;
         } catch (Throwable $th) {
             return JsonResponse::notFound($th->getMessage()); 
@@ -59,6 +79,8 @@ class TicketController extends Controller
      * Flow:
      * 1. Get id from parameter
      * 2. Get Ticket data by id using TicketRepository->getTicketById()
+     * 3. Get user assigned to ticket data by id
+     * 4. Get user comments
      * --------------------------------------------
      *
      * @param string $id
@@ -70,7 +92,7 @@ class TicketController extends Controller
         try {
             // Validate request data
             $validator = Validator::make(['id' => $id], [
-                'id' => 'required|integer',
+                'id' => 'required',
             ]);
     
             // Check if id is empty or not integer return error
@@ -88,6 +110,24 @@ class TicketController extends Controller
             if (!$result) {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
+
+            // Get user assigned to ticket data by id
+            $crmAPI = new CrmAPI();
+
+            // Get customer pipeline data by id
+            if ($result->customer_pipeline_id) {
+                $customer_pipeline = $crmAPI->get("crm/customer/pipeline/detail/$result->customer_pipeline_id");
+                $result->customer_pipeline = $customer_pipeline->data;
+            }
+
+            // Get user assigned to ticket data by id
+            $assigned_to = $crmAPI->get("crm/company/member/$result->user_id");
+            $result->assigned_to = $assigned_to->data;
+
+            // Get user comments
+            foreach ($result->comments as $comment) {
+                $comment->sender = $crmAPI->get("crm/company/member/$comment->user_id")->data;
+            };
 
             return JsonResponse::success($result);
         } catch (Throwable $th) {
@@ -117,12 +157,11 @@ class TicketController extends Controller
         try {
             // Validate request data
             $validator = Validator::make($request->all(), [
-                'customer_pipeline_id' => 'required',
                 'user_id' => 'required',
                 'company_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
-                'category' => 'required|in:category,delivery,service',
+                'category' => 'required|in:product,delivery,service',
                 'subcategory' => 'required',
                 'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
             ]);
@@ -370,7 +409,7 @@ class TicketController extends Controller
      * 
      * @return void
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id, StorageService $storageService, TicketAttachmentRepository $ticketAttachmentRepository)
     {
         try {
             // Merge $id parameter to request data
@@ -382,9 +421,11 @@ class TicketController extends Controller
                 'user_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
-                'category' => 'required|in:category,delivery,service',
+                'category' => 'required|in:product,delivery,service',
                 'subcategory' => 'required',
-                'attachments.*' => 'mimes:jpeg,jpg,png,gif,mp4',
+                "newAttachments" => "array",
+                "newAttachments.*" => "mimes:jpeg,jpg,png,gif,mp4",
+                "deleteAttachmentIds" => "array",
             ]);
 
             // Check if data is not equal validation return error
@@ -403,10 +444,94 @@ class TicketController extends Controller
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
+            // Get attachment data
+            $deleteAttachmentIds = $request->input('deleteAttachmentIds');
+            $files = $request->file('newAttachments');
+
+            // Check if deleteAttachmentIds is not null
+            if ($deleteAttachmentIds) {
+                // Looping ids
+                foreach ($deleteAttachmentIds as $deleteAttachmentId) {
+                    // Get attachment data by id
+                    $attachment = $ticketAttachmentRepository->getById($deleteAttachmentId);
+
+                    // Return error if data not found
+                    if (!$attachment)
+                    {
+                        return JsonResponse::notFound("Data attachment tidak ditemukan");
+                    }
+                }
+
+                // Delete attachment data
+                $ticketAttachmentRepository->destroyBatch($deleteAttachmentIds);
+            }
+
+            
+            // Check if files is not null
+            if ($files) {
+                // Looping files
+                foreach ($files as $file) {
+                    // Store file to storage
+                    $filePath = $storageService->storage()->put('customer_case_management', $file, 'public');
+                    $urlPath = null;
+            
+                    // Check if app environment is production
+                    if (app()->environment('production')) {
+                        // Get file url from digital ocean space
+                        $urlPath = config('app.do_space') . $filePath;
+                    } else {
+                        // Get file url from storage
+                        $urlPath = url('storage/' . $filePath);
+                    }
+
+                    // Store ticket attachment data
+                    $ticketAttachmentRepository->store($id, $urlPath, $filePath, $file->getSize(), $file->getMimeType());
+                }
+            }
+
             // Update ticket data
             $result = $this->ticketRepository->update($id, $request->all());
 
             return JsonResponse::success($result, "Data berhasil diubah");
+        } catch (Throwable $th) {
+            return JsonResponse::error($th->getMessage()); 
+        }
+    }
+
+    /**
+     * Get ticket statictics by company id
+     * --------------------------------------------
+     * Flow:
+     * 1. Get request data and validate
+     * 2. Get company_id from request data
+     * 3. Get statistics data using TicketRepository->statistics()
+     * --------------------------------------------
+     *
+     * @param Request $request
+     * 
+     * @return void
+     */
+    public function statistics(Request $request)
+    {
+        try {
+            // Validate request data
+            $validator = Validator::make($request->all(), [
+                'company_id' => 'required',
+            ]);
+    
+            // Check if company_id is empty return error
+            if ($validator->fails()) 
+            {
+                $errors = $validator->errors();
+                return JsonResponse::errorValidation($errors);
+            }
+
+            $company_id = $request->input('company_id');
+
+            // Get statistics data
+            $result = $this->ticketRepository->statistics($company_id);
+
+            return JsonResponse::success($result, "Data berhasil diambil");
         } catch (Throwable $th) {
             return JsonResponse::error($th->getMessage()); 
         }

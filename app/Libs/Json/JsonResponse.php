@@ -49,4 +49,12 @@ class JsonResponse
         ], 404);
     }
 
+    public static function unauthorized($message = "Unauthorized")
+    {
+        return response()->json([
+            'status' => 'error',
+            'message' => $message
+        ], 401);
+    }
+
 }

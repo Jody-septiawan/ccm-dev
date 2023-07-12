@@ -36,4 +36,34 @@ class TicketAttachmentRepository
 
         return $model;
     }
+
+    /**
+     * Get Ticket Attachment by id
+     *
+     * @param integer $id
+     * 
+     * @return void
+     */
+    public function getById(int $id)
+    {
+        $model = $this->model->find($id);
+
+        return $model;
+    }
+
+    /**
+     * Destroy batch Ticket Attachment by ids
+     *
+     * @param array $ids
+     * 
+     * @return void
+     */
+    public function destroyBatch(array $ids)
+    {
+        // Find ticket attachment by id and delete the attachment
+        $model = $this->model->whereIn('id', $ids);
+        $model->delete();
+
+        return $model;
+    }
 }
