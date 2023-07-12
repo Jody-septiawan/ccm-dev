@@ -48,11 +48,11 @@ phases:
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
-      # - echo Builds completed on `date`
-      # - docker push $REPOSITORY_URI:latest
-      # - docker push $REPOSITORY_URI:$IMAGE_TAG
-      # - echo Access Jenkins Webhook
-      # - curl -X POST http://deployer:111d93d275d2eacab104d07e9f5e97d70b@188.166.198.105:8080/job/app-gabungin-production/build?token=production
+      - echo Builds completed on `date`
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Access Jenkins Webhook
+      - curl -X POST http://deployer:111d93d275d2eacab104d07e9f5e97d70b@188.166.198.105:8080/job/ccm-gabungin-production/build?token=production
       # - echo Saving node_modules cache...
       # - CACHE_KEY="node_modules-$(md5sum package.json | awk '{print $1}')"
       # - tar -zcf node_modules.tar.gz node_modules
