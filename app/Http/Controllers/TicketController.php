@@ -210,7 +210,7 @@ class TicketController extends Controller
                 $crmAPI = new CrmAPI();
                 $crmAPI->patch("crm/pipeline/status/$customer_pipeline_id", [
                     'status' => 'Komplain',
-                ]);
+                ], $request->token);
             }
 
             // Upload attachment files
