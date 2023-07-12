@@ -54,6 +54,11 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/doc
 RUN apt update -y
 RUN apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
+
+# ADD APM AGENT
+RUN curl -L https://github.com/elastic/apm-agent-php/releases/download/v1.9.1/apm-agent-php_1.9.1_all.deb -o ~/apm-agent-php_1.9.1_all.deb
+RUN dpkg -i ~/apm-agent-php_1.9.1_all.deb
+
 # RUN rm /etc/nginx/sites-enabled/default
 # Breakpoint
 
