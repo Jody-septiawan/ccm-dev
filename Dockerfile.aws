@@ -74,10 +74,10 @@ RUN echo "Initiated" > /var/www/app/.initdocker
 
 COPY . /var/www/app
 
-#RUN service mysql start && mysql -u root -e "CREATE DATABASE IF NOT EXISTS crm;"
-#RUN service mysql start && mysql -u root -e "CREATE USER crm@localhost identified by '123456';"
-#RUN service mysql start && mysql -u root -e "GRANT ALL PRIVILEGES ON *.* to crm@localhost;"
-#RUN service mysql start && mysql -u root -e "FLUSH PRIVILEGES;"
+RUN service mysql start && mysql -u root -e "CREATE DATABASE IF NOT EXISTS ccm;"
+RUN service mysql start && mysql -u root -e "CREATE USER ccm@localhost identified by '123456';"
+RUN service mysql start && mysql -u root -e "GRANT ALL PRIVILEGES ON *.* to ccm@localhost;"
+RUN service mysql start && mysql -u root -e "FLUSH PRIVILEGES;"
 
 # RUN service redis-server start
 
