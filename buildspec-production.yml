@@ -16,10 +16,10 @@ phases:
       - echo Git Branch $CODEBUILD_WEBHOOK_HEAD_REF
 
       - git branch
-      - |
-        CACHE_KEY="node_modules-$(md5sum package.json | awk '{print $1}').tar.gz"
-        aws s3 cp s3://build-cache-gabungin/$CACHE_KEY node_modules.tar.gz || echo "Cache not found."
-        tar -zxf node_modules.tar.gz || true
+      # - |
+      #   CACHE_KEY="node_modules-$(md5sum package.json | awk '{print $1}').tar.gz"
+      #   aws s3 cp s3://build-cache-gabungin/$CACHE_KEY node_modules.tar.gz || echo "Cache not found."
+      #   tar -zxf node_modules.tar.gz || true
       - docker pull 784257917748.dkr.ecr.ap-southeast-1.amazonaws.com/appgabungin-base-image:latest
       - docker run -d --name gabungin_production -v "$(pwd)":/ccm.gabung.in 784257917748.dkr.ecr.ap-southeast-1.amazonaws.com/appgabungin-base-image
       # - docker exec gabungin_production git clone $REPO_GITHUB_URL
