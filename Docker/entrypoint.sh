@@ -12,10 +12,3 @@ service mysql restart
 service redis-server restart
 # MIGRATE DB
 /usr/bin/php /var/www/app/artisan migrate
-
-### CUSTOM SERVICES ###
-
-# ENABLE LEADWACHECKER
-systemctl enable leadwachecker
-# START LEADWACHECKER
-systemctl start leadwachecker
