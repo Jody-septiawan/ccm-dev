@@ -26,7 +26,7 @@ phases:
       - docker exec gabungin_production ln -s $(pwd)/ccm.gabung.in /var/www/app
       - docker exec gabungin_production sh -c "cd ccm.gabung.in && ls -lah"
       - docker exec gabungin_production sh -c "cd ccm.gabung.in && chmod -R 777 ./storage"
-      - docker exec gabungin_production sh -c "cd ccm.gabung.in && chmod -R 777 ./bootstrap/cache"
+      # - docker exec gabungin_production sh -c "cd ccm.gabung.in && chmod -R 777 ./bootstrap/cache"
       - docker exec gabungin_production service mysql start
       - docker exec gabungin_production sh -c 'service mysql start && mysql -u root -e "CREATE DATABASE IF NOT EXISTS ccm;"'
       - docker exec gabungin_production sh -c 'service mysql start && mysql -u root -e "CREATE USER ccm@localhost identified by '\''123456'\'';"'
