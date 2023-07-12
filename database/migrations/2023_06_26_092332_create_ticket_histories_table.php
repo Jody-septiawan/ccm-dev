@@ -17,11 +17,12 @@ class CreateTicketHistoriesTable extends Migration
             $table->id();
             $table->unsignedBigInteger('ticket_id');
             $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('company_id');
             $table->string('title', 100);
             $table->string('ticket_number', 150);
             $table->enum('priority', ['low', 'medium', 'high']);
             $table->enum('status', ['open', 'assigned', 'in progress', 'pending', 'rejected', 'resolved']);
-            $table->enum('category', ['category', 'delivery', 'service']);
+            $table->enum('category', ['product', 'delivery', 'service']);
             $table->string('subcategory', 100);
             $table->text('description');
 
