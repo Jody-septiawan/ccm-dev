@@ -142,8 +142,9 @@ class TicketController extends Controller
      * 1. Get request data and validate
      * 2. Generate ticket number
      * 3. Store Ticket data using TicketRepository->store()
-     * 4. Upload attachment files
-     * 5. Store Ticket Attachment data using TicketAttachmentRepository->store()
+     * 4. Change status customer pipeline to "Komplain"
+     * 5. Upload attachment files
+     * 6. Store Ticket Attachment data using TicketAttachmentRepository->store()
      * --------------------------------------------
      *
      * @param Request $request
@@ -202,6 +203,15 @@ class TicketController extends Controller
             // Store ticket data
             // result variabel will be object if data success to store
             $result = $this->ticketRepository->store($data);
+
+            // Check if customer pipeline id is not null
+            if ($customer_pipeline_id) {
+                // Update customer pipeline status to 'Komplain'
+                $crmAPI = new CrmAPI();
+                $crmAPI->patch("crm/pipeline/status/$customer_pipeline_id", [
+                    'status' => 'Komplain',
+                ]);
+            }
 
             // Upload attachment files
             // files variable will be null if no files uploaded

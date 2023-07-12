@@ -76,9 +76,10 @@ $app->middleware([
     Fruitcake\Cors\HandleCors::class,
 ]);
 
-// $app->routeMiddleware([
-//     'auth' => App\Http\Middleware\Authenticate::class,
-// ]);
+$app->routeMiddleware([
+    // 'auth' => App\Http\Middleware\Authenticate::class,
+    'api.token' => App\Http\Middleware\APITokenMiddleware::class,
+]);
 
 /*
 |--------------------------------------------------------------------------
