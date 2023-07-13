@@ -20,13 +20,17 @@ class CrmAPI {
      *
      * @param string $url
      * @param array $params
+     * @param string $token
      * 
      * @return void
      */
-    public function get(string $url, array $params = [])
+    public function get(string $url, array $params = [], string $token = null)
     {
         try {
             $response = $this->client->request('GET', $url, [
+                'headers' => [
+                    'Authorization' => "Bearer $token"
+                ],
                 'query' => $params
             ]);
     
@@ -40,13 +44,17 @@ class CrmAPI {
      * Create data from API
      *
      * @param string $url
-     * @param array $params
+     * @param array $data
+     * @param string $token
      * 
      * @return void
      */
-    public function create(string $url, array $data)
+    public function create(string $url, array $data, string $token = null)
     {
         $response = $this->client->request('POST', $url, [
+            'headers' => [
+                'Authorization' => "Bearer $token"
+            ],
             'json' => $data
         ]);
 
@@ -54,33 +62,63 @@ class CrmAPI {
     }
 
     /**
-     * Update data from API
+     * Update data from API with PUT method
      *
      * @param string $url
-     * @param array $params
+     * @param array $data
+     * @param string $token
      * 
      * @return void
      */
-    public function update(string $url, array $data)
+    public function put(string $url, array $data, string $token = null)
     {
         $response = $this->client->request('PUT', $url, [
+            'headers' => [
+                'Authorization' => "Bearer $token"
+            ],
             'json' => $data
         ]);
 
         return json_decode($response->getBody()->getContents());
     }
+
+    /**
+     * Update data from API with PATCH method
+     *
+     * @param string $url
+     * @param array $data
+     * @param string $token
+     * 
+     * @return void
+     */
+    public function patch(string $url, array $data, string $token = null)
+    {
+        $response = $this->client->request('PATCH', $url, [
+            'headers' => [
+                'Authorization' => "Bearer $token"
+            ],
+            'json' => $data
+        ]);
+    
+        return json_decode($response->getBody()->getContents());
+    }
+    
 
     /**
      * Delete data from API
      *
      * @param string $url
-     * @param array $params
+     * @param string $token
      * 
      * @return void
      */
-    public function delete(string $url)
+    public function delete(string $url, string $token = null)
     {
-        $response = $this->client->request('DELETE', $url);
+        $response = $this->client->request('DELETE', $url, [
+            'headers' => [
+                'Authorization' => "Bearer $token"
+            ],
+        ]);
 
         return $response->getStatusCode() === 204;
     }
