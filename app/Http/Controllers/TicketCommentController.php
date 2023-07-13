@@ -7,7 +7,7 @@ use App\Repositories\TicketCommentRepository;
 use App\Repositories\TicketCommentAttachmentRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Libs\Json\JsonResponse;
-use App\Services\StorageService;
+use App\Services\UploadFileService;
 
 class TicketCommentController extends Controller
 {
@@ -34,7 +34,7 @@ class TicketCommentController extends Controller
      * 
      * @return void
      */
-    public function store(Request $request, StorageService $storageService, TicketCommentAttachmentRepository $ticketCommentAttachmentRepository, string $id)
+    public function store(Request $request, UploadFileService $uploadFile, TicketCommentAttachmentRepository $ticketCommentAttachmentRepository, string $id)
     {
         try {
             // Merge $id parameter to request data
@@ -68,9 +68,14 @@ class TicketCommentController extends Controller
             if ($files) {
                 // Looping files
                 foreach ($files as $file) {
-                    // Store file to storage
-                    $filePath = $storageService->storage()->put('ticket_comment_attachment', $file, 'public');
+                    // Init file url path
                     $urlPath = null;
+                    // Get file size and type
+                    $fileSize = $file->getSize();
+                    $fileType = $file->getMimeType();
+
+                    // Store file to storage
+                    $filePath = $uploadFile->save('ticket_comment_attachment', $file);
             
                     // Check if app environment is production
                     if (app()->environment('production')) {
@@ -78,11 +83,11 @@ class TicketCommentController extends Controller
                         $urlPath = config('app.do_space') . $filePath;
                     } else {
                         // Get file url from storage
-                        $urlPath = url('storage/' . $filePath);
+                        $urlPath = url($filePath);
                     }
 
                     // Store ticket attachment data
-                    $attachments[] = $ticketCommentAttachmentRepository->store($result->id, $urlPath, $filePath, $file->getSize(), $file->getMimeType());
+                    $attachments[] = $ticketCommentAttachmentRepository->store($result->id, $urlPath, $filePath, $fileSize, $fileType);
                 }
             }
             
