@@ -159,7 +159,6 @@ class TicketController extends Controller
             // Validate request data
             $validator = Validator::make($request->all(), [
                 'user_id' => 'required',
-                'company_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
                 'category' => 'required|in:product,delivery,service',
@@ -177,7 +176,7 @@ class TicketController extends Controller
             // Get data from request
             $customer_pipeline_id = $request->input('customer_pipeline_id');
             $user_id = $request->input('user_id');
-            $company_id = $request->input('company_id');
+            $company_id = $request->user->company->id;
 
             // Generate ticket number
             // Count ticket exist by company_id
