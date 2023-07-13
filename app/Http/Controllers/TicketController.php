@@ -8,6 +8,7 @@ use App\Libs\Json\JsonResponse;
 use App\Repositories\TicketRepository;
 use App\Repositories\TicketAttachmentRepository;
 use App\Services\StorageService;
+use App\Services\UploadFileService;
 use App\Services\ExternalAPIs\CrmAPI;
 
 class TicketController extends Controller
@@ -148,12 +149,12 @@ class TicketController extends Controller
      * --------------------------------------------
      *
      * @param Request $request
-     * @param StorageService $storageService
+     * @param UploadFile $uploadFile
      * @param TicketAttachmentRepository $ticketAttachmentRepository
      * 
      * @return void
      */
-    public function store(Request $request, StorageService $storageService, TicketAttachmentRepository $ticketAttachmentRepository)
+    public function store(Request $request, UploadFileService $uploadFile, TicketAttachmentRepository $ticketAttachmentRepository)
     {
         try {
             // Validate request data
@@ -223,21 +224,26 @@ class TicketController extends Controller
             if ($files) {
                 // Looping files
                 foreach ($files as $file) {
-                    // Store file to storage
-                    $filePath = $storageService->storage()->put('customer_case_management', $file, 'public');
+                    // Init file url path
                     $urlPath = null;
-            
+                    // Get file size and type
+                    $fileSize = $file->getSize();
+                    $fileType = $file->getMimeType();
+
+                    // Store file to storage
+                    $filePath = $uploadFile->save('ticket_attachments', $file);
+
                     // Check if app environment is production
                     if (app()->environment('production')) {
                         // Get file url from digital ocean space
                         $urlPath = config('app.do_space') . $filePath;
                     } else {
                         // Get file url from storage
-                        $urlPath = url('storage/' . $filePath);
+                        $urlPath = url($filePath);
                     }
 
                     // Store ticket attachment data
-                    $attachments[] = $ticketAttachmentRepository->store($result->id, $urlPath, $filePath, $file->getSize(), $file->getMimeType());
+                    $attachments[] = $ticketAttachmentRepository->store($result->id, $urlPath, $filePath, $fileSize, $fileType);
                 }
             }
 
@@ -419,7 +425,7 @@ class TicketController extends Controller
      * 
      * @return void
      */
-    public function update(Request $request, string $id, StorageService $storageService, TicketAttachmentRepository $ticketAttachmentRepository)
+    public function update(Request $request, string $id, UploadFileService $uploadFile, TicketAttachmentRepository $ticketAttachmentRepository)
     {
         try {
             // Merge $id parameter to request data
@@ -481,21 +487,26 @@ class TicketController extends Controller
             if ($files) {
                 // Looping files
                 foreach ($files as $file) {
-                    // Store file to storage
-                    $filePath = $storageService->storage()->put('customer_case_management', $file, 'public');
+                    // Init file url path
                     $urlPath = null;
-            
+                    // Get file size and type
+                    $fileSize = $file->getSize();
+                    $fileType = $file->getMimeType();
+
+                    // Store file to storage
+                    $filePath = $uploadFile->save('ticket_attachments', $file);
+
                     // Check if app environment is production
                     if (app()->environment('production')) {
                         // Get file url from digital ocean space
                         $urlPath = config('app.do_space') . $filePath;
                     } else {
                         // Get file url from storage
-                        $urlPath = url('storage/' . $filePath);
+                        $urlPath = url($filePath);
                     }
 
                     // Store ticket attachment data
-                    $ticketAttachmentRepository->store($id, $urlPath, $filePath, $file->getSize(), $file->getMimeType());
+                    $ticketAttachmentRepository->store($id, $urlPath, $filePath, $fileSize, $fileType);
                 }
             }
 
