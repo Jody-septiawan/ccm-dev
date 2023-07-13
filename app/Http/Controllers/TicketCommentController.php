@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Repositories\TicketRepository;
 use App\Repositories\TicketCommentRepository;
 use App\Repositories\TicketCommentAttachmentRepository;
 use Illuminate\Support\Facades\Validator;
@@ -34,7 +35,7 @@ class TicketCommentController extends Controller
      * 
      * @return void
      */
-    public function store(Request $request, StorageService $storageService, TicketCommentAttachmentRepository $ticketCommentAttachmentRepository, string $id)
+    public function store(Request $request, StorageService $storageService, TicketCommentAttachmentRepository $ticketCommentAttachmentRepository, TicketRepository $ticketRepository,string $id)
     {
         try {
             // Merge $id parameter to request data
@@ -55,7 +56,13 @@ class TicketCommentController extends Controller
                 $errors = $validator->errors();
                 return JsonResponse::errorValidation($errors);
             }
-            
+
+            $ticketExist = $ticketRepository->getTicketById($id);
+
+            if (!$ticketExist || $ticketExist->company_id != $request->company_id) {
+                return JsonResponse::notFound();
+            }
+
             // Store ticket comment data
             $result = $this->ticketCommentRepository->store($request->all());
 
@@ -142,7 +149,7 @@ class TicketCommentController extends Controller
             $ticketComment = $this->ticketCommentRepository->getById($id);
 
             // Return error if ticket comment not found
-            if (!$ticketComment) {
+            if (!$ticketComment || $ticketComment->ticket->company_id != $request->company_id) {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 

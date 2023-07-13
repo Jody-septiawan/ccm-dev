@@ -24,6 +24,7 @@ class APITokenMiddleware
         $user = $crmAPI->get("user/token/check", [], $bearerToken);
 
         $request->merge(['user' => $user->data]);
+        $request->merge(['company_id' => $user->data->company->id]);
         $request->merge(['token' => $bearerToken]);
         
         return $next($request);
