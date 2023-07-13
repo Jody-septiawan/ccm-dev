@@ -24,10 +24,11 @@ $router->group(['prefix' => 'api', 'as' => 'api.'], function() use ($router) {
     $router->group(['prefix' => 'v1', 'as' => 'v1.'], function() use ($router) {
 
         // tickets API
-        $router->group(['prefix' => 'tickets', 'as' => 'tickets.'], function() use ($router) {
-            $router->post('/', ['middleware' => 'api.token', 'as' => 'store', 'uses' => 'TicketController@store']);
+        $router->get('/tickets/{id}', ['as' => 'show', 'uses' => 'TicketController@show']);
+
+        $router->group(['prefix' => 'tickets', 'middleware' => 'api.token', 'as' => 'tickets.'], function() use ($router) {
+            $router->post('/', ['as' => 'store', 'uses' => 'TicketController@store']);
             $router->get('/', ['as' => 'index', 'uses' => 'TicketController@index']);
-            $router->get('/{id}', ['as' => 'show', 'uses' => 'TicketController@show']);
             $router->get('/data/statistics', ['as' => 'index', 'uses' => 'TicketController@statistics']);
             $router->put('/{id}/status', ['as' => 'updateStatus', 'uses' => 'TicketController@updateStatus']);
             $router->put('/{id}', ['as' => 'update', 'uses' => 'TicketController@update']);
