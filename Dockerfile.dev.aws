@@ -1,0 +1,98 @@
+FROM 784257917748.dkr.ecr.ap-southeast-1.amazonaws.com/ubuntu20-php7.4-nginx-mariadb:latest
+# BASE IMAGE FOR THIS PROJECT
+# WARNING :
+# DO NOT EDIT NOR DELETE THIS FILE IF YOU DIDN'T UNDERSTAND WHAT YOU ARE DOING OR ALL SYSTEM WILL BE CRASH !!
+
+#user id
+ARG UID=5003
+#group id
+ARG GID=5003
+
+RUN echo $UID
+RUN echo $GID
+
+RUN addgroup --gid $GID app
+RUN adduser --disabled-password --gecos '' --uid $UID --gid $GID app
+
+#copy base docker
+COPY ./Docker/entrypoint.sh ./entrypoint.sh
+
+RUN  DEBIAN_FRONTEND=noninteractive
+
+RUN chmod +x ./entrypoint.sh
+RUN apt update -y
+RUN apt upgrade -y
+
+## ADD PHP MODULE
+RUN apt install -y \
+      php7.4-fpm \
+      php7.4-pdo \
+      php7.4-mysql \
+      php7.4-zip \
+      php7.4-gd \
+      php7.4-mbstring \
+      php7.4-curl \
+      php7.4-xml \
+      php7.4-bcmath \
+      php7.4-mongodb \
+      php7.4-intl \
+      php7.4-sqlite3 \
+      php7.4-redis
+
+RUN apt install -y redis-server
+
+#RUN apt remove -y docker docker-engine docker.io containerd runc
+RUN apt install -y \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release
+RUN mkdir -p /etc/apt/keyrings
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+RUN apt update -y
+RUN apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+
+# ADD APM AGENT
+RUN curl -L https://github.com/elastic/apm-agent-php/releases/download/v1.9.1/apm-agent-php_1.9.1_all.deb -o ~/apm-agent-php_1.9.1_all.deb
+RUN dpkg -i ~/apm-agent-php_1.9.1_all.deb
+
+# RUN rm /etc/nginx/sites-enabled/default
+# Breakpoint
+
+COPY ./Docker/php/php.ini.dev /etc/php/7.4/fpm/php.ini
+COPY ./Docker/php/www.conf /etc/php/7.4/fpm/pool.d/www.conf
+COPY ./Docker/nginx/nginx.conf /etc/nginx/sites-enabled/default.conf
+COPY ./Docker/supervisor/config.conf /etc/supervisor/conf.d/supervisord.conf
+COPY ./Docker/mysql/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
+COPY ./Docker/redis/redis.conf /etc/redis/redis.conf
+#COPY ./Docker/services/* /etc/systemd/system/
+# Starter file
+RUN echo "Initiated" > /var/www/app/.initdocker
+
+COPY . /var/www/app
+
+RUN service mysql start && mysql -u root -e "CREATE DATABASE IF NOT EXISTS ccm;"
+RUN service mysql start && mysql -u root -e "CREATE USER ccm@localhost identified by '123456';"
+RUN service mysql start && mysql -u root -e "GRANT ALL PRIVILEGES ON *.* to ccm@localhost;"
+RUN service mysql start && mysql -u root -e "FLUSH PRIVILEGES;"
+
+# RUN service redis-server start
+
+EXPOSE 80
+
+EXPOSE 3306
+RUN service php7.4-fpm start
+RUN ln -s /etc/supervisor/conf.d/supervisord.conf /etc/supervisord.conf
+RUN apt install -y cron nano
+RUN service php7.4-fpm start
+#RUN crontab -l | { cat; echo "* * * * * sudo -u app /usr/bin/php /var/www/app/artisan schedule:run >> /dev/null 2>&1"; } | crontab -
+RUN chown -R app:app /var/www/app
+RUN apt install -y sudo nano
+
+RUN chmod +x /var/www/app/Docker/other/run-horizon.sh
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+#ENTRYPOINT ["./entrypoint.sh"]

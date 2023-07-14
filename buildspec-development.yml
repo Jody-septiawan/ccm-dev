@@ -1,0 +1,72 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+
+      - aws --version
+      - aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 784257917748.dkr.ecr.ap-southeast-1.amazonaws.com
+      - REPOSITORY_URI=784257917748.dkr.ecr.ap-southeast-1.amazonaws.com/ccm-gabungin-development
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
+      - ls -l
+
+      - echo Git Branch $CODEBUILD_WEBHOOK_HEAD_REF
+
+      - git branch
+      # - |
+      #   CACHE_KEY="node_modules-$(md5sum package.json | awk '{print $1}').tar.gz"
+      #   aws s3 cp s3://build-cache-gabungin/$CACHE_KEY node_modules.tar.gz || echo "Cache not found."
+      #   tar -zxf node_modules.tar.gz || true
+      - docker pull 784257917748.dkr.ecr.ap-southeast-1.amazonaws.com/appgabungin-base-image:latest
+      - docker run -d --name gabungin_development -v "$(pwd)":/ccm.gabung.in 784257917748.dkr.ecr.ap-southeast-1.amazonaws.com/appgabungin-base-image
+      # - docker exec gabungin_production git clone $REPO_GITHUB_URL
+      # - docker exec gabungin_production sh -c "cd app.gabung.in && git checkout develop-v2"
+      - docker exec gabungin_development rm -rf /var/www/app
+      - docker exec gabungin_development ln -s $(pwd)/ccm.gabung.in /var/www/app
+      - docker exec gabungin_development sh -c "cd ccm.gabung.in && ls -lah"
+      - docker exec gabungin_development sh -c "cd ccm.gabung.in && chmod -R 777 ./storage"
+      # - docker exec gabungin_production sh -c "cd ccm.gabung.in && chmod -R 777 ./bootstrap/cache"
+      - docker exec gabungin_development service mysql start
+      - docker exec gabungin_development sh -c 'service mysql start && mysql -u root -e "CREATE DATABASE IF NOT EXISTS ccm;"'
+      - docker exec gabungin_development sh -c 'service mysql start && mysql -u root -e "CREATE USER ccm@localhost identified by '\''123456'\'';"'
+      - docker exec gabungin_development sh -c 'service mysql start && mysql -u root -e "GRANT ALL PRIVILEGES ON *.* to ccm@localhost;"'
+      - docker exec gabungin_development sh -c 'service mysql start && mysql -u root -e "FLUSH PRIVILEGES;"'
+      - docker exec gabungin_development sh -c "cd ccm.gabung.in && composer update --ignore-platform-reqs"
+      - docker exec gabungin_development sh -c "cd ccm.gabung.in && composer install --ignore-platform-reqs"
+      - docker exec gabungin_development sh -c "cd ccm.gabung.in && cp .env.save .env"
+      - docker stop $(docker ps -lq)
+  build:
+    commands:
+      - echo Build started on `date`
+
+      - echo Building the Docker image...
+
+      # - git clone $REPO_GITHUB_URL
+      # - cd /app.gabung.in && git checkout develop-v2
+      - docker build -f Dockerfile.dev.aws -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Builds completed on `date`
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Access Jenkins Webhook
+      - curl -X POST http://deployer:111d93d275d2eacab104d07e9f5e97d70b@188.166.198.105:8080/job/ccm-gabungin-development/build?token=development
+      # - echo Saving node_modules cache...
+      # - CACHE_KEY="node_modules-$(md5sum package.json | awk '{print $1}')"
+      # - tar -zcf node_modules.tar.gz node_modules
+      # - aws s3 cp node_modules.tar.gz s3://build-cache-gabungin/$CACHE_KEY.tar.gz
+
+      # - echo Pushing the Docker images...
+      # - echo Writing image definitions file...
+artifacts:
+  files: imagedefinitions.json
+
+# cache:
+#   paths:
+#     - 'node_modules/**/*' # Cache `node_modules` for faster `yarn` or `npm i`
+#     - 'app.gabung.in/node_modules/**/*' # Cache `node_modules` for faster `yarn` or `npm i`
+#     - '/app.gabung.in/node_modules/**/*' # Cache `node_modules` for faster `yarn` or `npm i`
+
+#     - '.next/cache/**/*' # Cache Next.js for faster application rebuilds
