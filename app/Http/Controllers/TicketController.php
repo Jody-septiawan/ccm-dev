@@ -39,6 +39,8 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         try {
+            $request->merge(['company_id' => $request->company_id]);
+
             // Validate request data
             $validator = Validator::make($request->all(), [
                 'company_id' => 'required',
@@ -161,7 +163,6 @@ class TicketController extends Controller
             // Validate request data
             $validator = Validator::make($request->all(), [
                 'user_id' => 'required',
-                'company_id' => 'required',
                 'title' => 'required',
                 'priority' => 'required|in:low,medium,high',
                 'category' => 'required|in:product,delivery,service',
@@ -179,7 +180,7 @@ class TicketController extends Controller
             // Get data from request
             $customer_pipeline_id = $request->input('customer_pipeline_id');
             $user_id = $request->input('user_id');
-            $company_id = $request->input('company_id');
+            $company_id = $request->company_id;
 
             // Generate ticket number
             // Count ticket exist by company_id
@@ -324,8 +325,8 @@ class TicketController extends Controller
             // ticketExist variable will be object if ticket exist
             $ticketExist = $this->ticketRepository->getTicketById($id);
 
-            // Return error if ticket not exist
-            if (!$ticketExist) {
+            // Return error if ticket not exist and ticket company id not equal request company id
+            if (!$ticketExist || $ticketExist->company_id != $request->company_id) {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
@@ -348,11 +349,12 @@ class TicketController extends Controller
      * 4. Destroy ticket data by id using TicketRepository->destroy()
      * --------------------------------------------
      *
+     * @param Request $request
      * @param string $id
      * 
      * @return void
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         try {
             // Validate request data
@@ -372,8 +374,8 @@ class TicketController extends Controller
             // result variable will be object if data found
             $result = $this->ticketRepository->getTicketById($id);
 
-            // Return error if data not found
-            if (!$result) {
+            // Return error if data not found and company id not same
+            if (!$result || $result->company_id != $request->company_id) {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
@@ -423,8 +425,8 @@ class TicketController extends Controller
                 // Get Ticket data by id
                 $ticket = $this->ticketRepository->getTicketById($id);
 
-                // Return error if data not found
-                if (!$ticket)
+                // Return error if data not found and company id not same
+                if (!$ticket || $ticket->company_id != $request->company_id)
                 {
                     return JsonResponse::notFound("Data tidak ditemukan");
                 }
@@ -484,7 +486,7 @@ class TicketController extends Controller
             $ticketExist = $this->ticketRepository->getTicketById($id);
 
             // Return error if ticket not exist
-            if (!$ticketExist)
+            if (!$ticketExist || $ticketExist->company_id != $request->company_id)
             {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }

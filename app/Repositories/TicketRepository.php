@@ -41,7 +41,7 @@ class TicketRepository
         return $model;
     }
 
-/**
+    /**
      * Count company ticket by company id
      *
      * @param int $company_id
