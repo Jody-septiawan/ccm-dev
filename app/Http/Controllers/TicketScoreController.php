@@ -71,6 +71,7 @@ class TicketScoreController extends Controller
                 return JsonResponse::notFound('Rating not found');
             }
 
+            // Check if ticket score already exist return error
             $ticketScoreExist = $this->ticketScoreRepository->getByTicketId($ticket->id);
 
             if ($ticketScoreExist)
