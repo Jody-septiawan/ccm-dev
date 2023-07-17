@@ -133,7 +133,7 @@ class TicketRepository
         }
 
         // Relation to attachment and Order by
-        $model->with(['attachments', 'comments.attachments', 'score']);
+        $model->with(['attachments', 'comments.attachments', 'solution', 'score']);
         $model->orderBy($orderBy, $orderByDir);
 
         // Paginate
@@ -153,7 +153,7 @@ class TicketRepository
     public function getTicketById(string $searchValue)
     {
         $model = $this->model->query();
-        $model->with(['attachments', 'comments.attachments', 'score.rating']);
+        $model->with(['attachments', 'comments.attachments', 'solution', 'score.rating']);
         $model->where(function ($model) use ($searchValue) {
             $model->where('id', $searchValue)
                 ->orWhere('ticket_number', $searchValue);
@@ -173,7 +173,7 @@ class TicketRepository
     public function updateStatus(int $id, string $status)
     {
         // Find ticket by id and Change the status
-        $model = $this->model->find($id);
+        $model = $this->model->with('solution')->find($id);
         $model->status = $status;
         $model->save();
 

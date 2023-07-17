@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Libs\Json\JsonResponse;
 use App\Repositories\TicketRepository;
 use App\Repositories\TicketAttachmentRepository;
+use App\Repositories\TicketSolutionRepository;
 use App\Services\StorageService;
 use App\Services\UploadFileService;
 use App\Services\ExternalAPIs\CrmAPI;
@@ -272,7 +273,7 @@ class TicketController extends Controller
      * 
      * @return void
      */
-    public function updateStatus(Request $request, string $id)
+    public function updateStatus(Request $request, string $id, TicketSolutionRepository $ticketSolutionRepository)
     {
         try {
             // Merge $id parameter to request data
@@ -289,6 +290,34 @@ class TicketController extends Controller
             {
                 $errors = $validator->errors();
                 return JsonResponse::errorValidation($errors);
+            }
+
+            // Check if status is 'resolved'
+            if ($request->input('status') === "resolved") {
+                // Validate request data
+                $resolvedValidator = Validator::make($request->all(), [
+                    'solution' => 'required|string',
+                ]);
+
+                // Check if data is not equal validation return error
+                if ($resolvedValidator->fails()) 
+                {
+                    $errors = $resolvedValidator->errors();
+                    return JsonResponse::errorValidation($errors);
+                }
+
+                // Destroy ticket solution by ticket id
+                $ticketSolutionRepository->destroyByTicketId($id);
+
+                // Store ticket solution
+                $ticketSolutionRepository->store([
+                    'ticket_id' => $id,
+                    'solution' => $request->input('solution'),
+                    'nominal' => $request->input('nominal'),
+                ]);
+            } else {
+                // Destroy ticket solution by ticket id
+                $ticketSolutionRepository->destroyByTicketId($id);
             }
 
             // Check if ticket exist
