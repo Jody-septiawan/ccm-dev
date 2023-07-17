@@ -34,7 +34,7 @@ phases:
       - docker exec gabungin_development sh -c 'service mysql start && mysql -u root -e "FLUSH PRIVILEGES;"'
       - docker exec gabungin_development sh -c "cd ccm.gabung.in && composer update --ignore-platform-reqs"
       - docker exec gabungin_development sh -c "cd ccm.gabung.in && composer install --ignore-platform-reqs"
-      - docker exec gabungin_development sh -c "cd ccm.gabung.in && cp .env.save .env"
+      - docker exec gabungin_development sh -c "cd ccm.gabung.in && cp .env.dev .env"
       - docker stop $(docker ps -lq)
   build:
     commands:
