@@ -257,7 +257,7 @@ class TicketRepository
             ->pluck('count', 'status');
     
         /** @var array $allStatus */
-        $allStatus = TicketStatus::data;
+        $allStatus = TicketStatus::DATA;
 
         $statusData = [];
         
