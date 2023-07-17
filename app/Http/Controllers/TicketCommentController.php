@@ -29,7 +29,7 @@ class TicketCommentController extends Controller
      * ------------------------------------
      *
      * @param Request $request
-     * @param StorageService $storageService
+     * @param UploadFileService $uploadFile
      * @param TicketCommentAttachmentRepository $ticketCommentAttachmentRepository
      * @param string $id => ticket id
      * 
@@ -122,7 +122,7 @@ class TicketCommentController extends Controller
      * ------------------------------------
      *
      * @param Request $request
-     * @param StorageService $storageService
+     * @param UploadFileService $uploadFile
      * @param TicketCommentAttachmentRepository $ticketCommentAttachmentRepository
      * @param string $id => ticket comment id
      * 
