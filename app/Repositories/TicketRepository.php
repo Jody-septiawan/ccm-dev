@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use JamesDordoy\LaravelVueDatatable\Http\Resources\DataTableCollectionResource;
 use Illuminate\Support\Facades\DB;
 use App\Models\Ticket;
+use App\Constants\TicketStatus;
 
 class TicketRepository
 {
@@ -255,7 +256,8 @@ class TicketRepository
             ->groupBy('status')
             ->pluck('count', 'status');
     
-        $allStatus = ['open', 'assigned', 'in progress', 'pending', 'rejected', 'resolved'];
+        /** @var array $allStatus */
+        $allStatus = TicketStatus::data;
 
         $statusData = [];
         
