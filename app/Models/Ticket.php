@@ -22,4 +22,9 @@ class Ticket extends Model
     {
         return $this->hasOne(TicketSolution::class, "ticket_id");
     }
+
+    public function score()
+    {
+        return $this->hasOne(TicketScore::class, "ticket_id");
+    }
 }

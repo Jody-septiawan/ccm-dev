@@ -25,6 +25,7 @@ $router->group(['prefix' => 'api', 'as' => 'api.'], function() use ($router) {
 
         // tickets API
         $router->get('/tickets/{id}', ['as' => 'show', 'uses' => 'TicketController@show']);
+        $router->post('/tickets/{id}/score', ['as' => 'show', 'uses' => 'TicketScoreController@store']);
 
         $router->group(['prefix' => 'tickets', 'middleware' => 'api.token', 'as' => 'tickets.'], function() use ($router) {
             $router->post('/', ['as' => 'store', 'uses' => 'TicketController@store']);
