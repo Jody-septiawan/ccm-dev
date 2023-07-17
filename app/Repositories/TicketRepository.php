@@ -255,14 +255,19 @@ class TicketRepository
             ->groupBy('status')
             ->pluck('count', 'status');
     
-        $allStatus = ['open', 'assigned', 'inProgress', 'pending', 'rejected', 'resolved'];
+        $allStatus = ['open', 'assigned', 'in progress', 'pending', 'rejected', 'resolved'];
 
         $statusData = [];
         
+        // Get all status and count
         foreach ($allStatus as $status) {
             $count = $statusCounts[$status] ?? 0;
             $statusData[$status] = $count;
         }
+
+        // Change 'in progress' to 'inProgress'
+        $statusData['inProgress'] = $statusData['in progress'];
+        unset($statusData['in progress']);
         
         $ticketStatistic = [
             'total' => $totalTickets,
