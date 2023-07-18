@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Libs\Json\JsonResponse;
+use App\Libs\TicketNumberGenerator;
 use App\Repositories\TicketRepository;
 use App\Repositories\TicketAttachmentRepository;
 use App\Repositories\TicketSolutionRepository;
@@ -194,8 +195,7 @@ class TicketController extends Controller
                  $countTicket = $this->ticketRepository->countCompanyTicket($company_id);
 
                 // Sum count ticket with iterasi
-                // Generate ticket number with format TICKET{company_id}{count_ticket}
-                $ticketNumber = 'TICKET' . sprintf('%03d', $company_id) . sprintf('%03d', $countTicket + $iterasi);
+                $ticketNumber = TicketNumberGenerator::generate($company_id, $countTicket + $iterasi);
 
                 // Get ticket data by ticket number
                 $ticketExist = $this->ticketRepository->getTicketById($ticketNumber);
