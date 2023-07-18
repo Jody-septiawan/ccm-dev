@@ -134,7 +134,7 @@ class TicketRepository
         }
 
         // Relation to attachment and Order by
-        $model->with(['attachments', 'comments.attachments', 'solution', 'score']);
+        $model->with(['attachments', 'comments.attachments', 'solution', 'score', 'notifications.templates']);
         $model->orderBy($orderBy, $orderByDir);
 
         // Paginate
@@ -154,7 +154,7 @@ class TicketRepository
     public function getTicketById(string $searchValue)
     {
         $model = $this->model->query();
-        $model->with(['attachments', 'comments.attachments', 'solution', 'score.rating']);
+        $model->with(['attachments', 'comments.attachments', 'solution', 'score.rating', 'notifications.templates']);
         $model->where(function ($model) use ($searchValue) {
             $model->where('id', $searchValue)
                 ->orWhere('ticket_number', $searchValue);

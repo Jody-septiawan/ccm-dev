@@ -49,12 +49,16 @@ class CrmAPI {
      * 
      * @return void
      */
-    public function create(string $url, array $data, string $token = null)
+    public function create(string $url, array $data, string $token = null, array $headers = [])
     {
+        $authorization = [
+            'Authorization' => "Bearer $token",
+        ];
+
+        $headers = array_merge($authorization, $headers);
+        
         $response = $this->client->request('POST', $url, [
-            'headers' => [
-                'Authorization' => "Bearer $token"
-            ],
+            'headers' => $headers,
             'json' => $data
         ]);
 
