@@ -245,38 +245,6 @@ class TicketController extends Controller
                 $errors = $validator->errors();
                 return JsonResponse::errorValidation($errors);
             }
- 
-            // Check if customer pipeline id is exist
-            if ($request->input('customer_pipeline_id'))
-            {
-                // Validate request data
-                $validator = Validator::make($request->all(), [
-                    'notification_template_create_id' => 'required|integer',
-                    'notification_template_close_id' => 'required|integer',
-                ]);
-        
-                // Check if data is not equal validation return error
-                if ($validator->fails()) 
-                {
-                    $errors = $validator->errors();
-                    return JsonResponse::errorValidation($errors);
-                }
-
-                // Check if notification template create and close is exist
-                $templateCreate = $icketNotificationTemplateRepository->getById($request->input('notification_template_create_id'));
-
-                if (!$templateCreate || $templateCreate->type != 'create')
-                {
-                    return JsonResponse::notFound('Notification template create not found');
-                }
-                
-                $templateClose = $icketNotificationTemplateRepository->getById($request->input('notification_template_close_id'));
-
-                if (!$templateClose || $templateClose->type != 'close')
-                {
-                    return JsonResponse::notFound('Notification template close not found');
-                }
-            }
 
             // Get data from request
             $customer_pipeline_id = $request->input('customer_pipeline_id');
@@ -284,6 +252,32 @@ class TicketController extends Controller
             $notification_template_close_id = $request->input('notification_template_close_id');
             $user_id = $request->input('user_id');
             $company_id = $request->company_id;
+ 
+            // Check if customer pipeline id is exist
+            if ($customer_pipeline_id)
+            {
+                if ($notification_template_create_id)
+                {
+                    // Check if notification template create and close is exist
+                    $templateCreate = $icketNotificationTemplateRepository->getById($notification_template_create_id);
+                    
+                    if (!$templateCreate || $templateCreate->type != 'create')
+                    {
+                        return JsonResponse::notFound('Notification template create not found');
+                    }
+                }
+                
+                if ($notification_template_close_id)
+                {
+                    // Check if notification template create and close is exist
+                    $templateClose = $icketNotificationTemplateRepository->getById($notification_template_close_id);
+
+                    if (!$templateClose || $templateClose->type != 'close')
+                    {
+                        return JsonResponse::notFound('Notification template close not found');
+                    }
+                }
+            }
 
             // Generate ticket number
             // Count ticket exist by company_id
@@ -365,7 +359,7 @@ class TicketController extends Controller
             // Add attachments data to result
             $result['attachments'] = $attachments;
 
-            if ($customer_pipeline_id) {
+            if ($customer_pipeline_id && $notification_template_create_id) {
                 $crm_customer_pipeline = $crmAPI->get("crm/customer/pipeline/detail/$customer_pipeline_id");
                 $customer_pipeline = $crm_customer_pipeline->data;
 
