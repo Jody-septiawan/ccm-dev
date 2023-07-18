@@ -8,9 +8,13 @@ use App\Libs\Json\JsonResponse;
 use App\Repositories\TicketRepository;
 use App\Repositories\TicketAttachmentRepository;
 use App\Repositories\TicketSolutionRepository;
+use App\Repositories\TicketNotificationTemplateRepository;
+use App\Repositories\TicketNotificationRepository;
 use App\Services\StorageService;
 use App\Services\UploadFileService;
 use App\Services\ExternalAPIs\CrmAPI;
+use App\Services\TextFormat;
+use App\Services\TextMessage;
 
 class TicketController extends Controller
 {
@@ -55,9 +59,42 @@ class TicketController extends Controller
 
             $result = $this->ticketRepository->getTicketDatatable($request);
 
-            // Get user assigned to ticket data by id
+            $crmAPI = new CrmAPI();
+
             foreach ($result as $item) {
-                $crmAPI = new CrmAPI();
+
+                if (count($item->notifications) > 0) {
+                    // Split Notification create and close
+                    $notificationCreate = $item->notifications->where('templates.type', 'create')->first();
+                    $notificationClose = $item->notifications->where('templates.type', 'close')->first();
+                        
+                    // Remove notifications from result
+                    unset($item->notifications);
+                    
+                    // Check if notificationCreate and notificationClose is null
+                    $notificationCreate = $notificationCreate->templates ?? null;
+                    $notificationClose = $notificationClose->templates ?? null;
+
+                    // Get plugin setting data by plugin_setting_id
+                    if ($notificationCreate) {
+                        $plugin_setting = $crmAPI->get("plugin/setting/$notificationCreate->plugin_setting_id");
+                        $notificationCreate->plugin_setting = $plugin_setting->data;
+                    }
+
+                    if ($notificationClose) {
+                        $plugin_setting = $crmAPI->get("plugin/setting/$notificationClose->plugin_setting_id");
+                        $notificationClose->plugin_setting = $plugin_setting->data;
+                    }
+                    
+                    // Add notifications to result with create and close key
+                    $item->notifications = [
+                        'create' => $notificationCreate,
+                        'close' => $notificationClose,
+                    ];
+                } else {
+                    unset($item->notifications);
+                    $item->notifications = null;
+                }
 
                 // Get customer pipeline data by id
                 if ($item->customer_pipeline_id) {
@@ -115,8 +152,40 @@ class TicketController extends Controller
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
 
-            // Get user assigned to ticket data by id
             $crmAPI = new CrmAPI();
+
+            if (count($result->notifications) > 0) {
+                // Split Notification create and close
+                $notificationCreate = $result->notifications->where('templates.type', 'create')->first();
+                $notificationClose = $result->notifications->where('templates.type', 'close')->first();
+                    
+                // Remove notifications from result
+                unset($result->notifications);
+
+                // Check if notificationCreate and notificationClose is null
+                $notificationCreate = $notificationCreate->templates ?? null;
+                $notificationClose = $notificationClose->templates ?? null;
+
+                // Get plugin setting data by plugin_setting_id
+                if ($notificationCreate) {
+                    $plugin_setting = $crmAPI->get("plugin/setting/$notificationCreate->plugin_setting_id");
+                    $notificationCreate->plugin_setting = $plugin_setting->data;
+                }
+
+                if ($notificationClose) {
+                    $plugin_setting = $crmAPI->get("plugin/setting/$notificationClose->plugin_setting_id");
+                    $notificationClose->plugin_setting = $plugin_setting->data;
+                }
+                
+                // Add notifications to result with create and close key
+                $result->notifications = [
+                    'create' => $notificationCreate,
+                    'close' => $notificationClose,
+                ];
+            } else {
+                unset($result->notifications);
+                $result->notifications = null;
+            }
 
             // Get customer pipeline data by id
             if ($result->customer_pipeline_id) {
@@ -157,7 +226,7 @@ class TicketController extends Controller
      * 
      * @return void
      */
-    public function store(Request $request, UploadFileService $uploadFile, TicketAttachmentRepository $ticketAttachmentRepository)
+    public function store(Request $request, UploadFileService $uploadFile, TicketAttachmentRepository $ticketAttachmentRepository, TicketNotificationTemplateRepository $icketNotificationTemplateRepository, TicketNotificationRepository $ticketNotificationRepository)
     {
         try {
             // Validate request data
@@ -176,9 +245,43 @@ class TicketController extends Controller
                 $errors = $validator->errors();
                 return JsonResponse::errorValidation($errors);
             }
-    
+ 
+            // Check if customer pipeline id is exist
+            if ($request->input('customer_pipeline_id'))
+            {
+                // Validate request data
+                $validator = Validator::make($request->all(), [
+                    'notification_template_create_id' => 'required|integer',
+                    'notification_template_close_id' => 'required|integer',
+                ]);
+        
+                // Check if data is not equal validation return error
+                if ($validator->fails()) 
+                {
+                    $errors = $validator->errors();
+                    return JsonResponse::errorValidation($errors);
+                }
+
+                // Check if notification template create and close is exist
+                $templateCreate = $icketNotificationTemplateRepository->getById($request->input('notification_template_create_id'));
+
+                if (!$templateCreate || $templateCreate->type != 'create')
+                {
+                    return JsonResponse::notFound('Notification template create not found');
+                }
+                
+                $templateClose = $icketNotificationTemplateRepository->getById($request->input('notification_template_close_id'));
+
+                if (!$templateClose || $templateClose->type != 'close')
+                {
+                    return JsonResponse::notFound('Notification template close not found');
+                }
+            }
+
             // Get data from request
             $customer_pipeline_id = $request->input('customer_pipeline_id');
+            $notification_template_create_id = $request->input('notification_template_create_id');
+            $notification_template_close_id = $request->input('notification_template_close_id');
             $user_id = $request->input('user_id');
             $company_id = $request->company_id;
 
@@ -207,13 +310,23 @@ class TicketController extends Controller
             // result variabel will be object if data success to store
             $result = $this->ticketRepository->store($data);
 
+            $crmAPI = new CrmAPI();
+
             // Check if customer pipeline id is not null
             if ($customer_pipeline_id) {
                 // Update customer pipeline status to 'Komplain'
-                $crmAPI = new CrmAPI();
                 $crmAPI->patch("crm/pipeline/status/$customer_pipeline_id", [
                     'status' => 'Komplain',
                 ], $request->token);
+
+                // Store ticket notification
+                if ($notification_template_create_id) {
+                    $ticketNotificationRepository->store($result->id, $notification_template_create_id);
+                }
+
+                if ($notification_template_close_id) {
+                    $ticketNotificationRepository->store($result->id, $notification_template_close_id);
+                }
             }
 
             // Upload attachment files
@@ -251,6 +364,32 @@ class TicketController extends Controller
 
             // Add attachments data to result
             $result['attachments'] = $attachments;
+
+            if ($customer_pipeline_id) {
+                $crm_customer_pipeline = $crmAPI->get("crm/customer/pipeline/detail/$customer_pipeline_id");
+                $customer_pipeline = $crm_customer_pipeline->data;
+
+                // Get ticket notification template
+                $notification_template_create = $icketNotificationTemplateRepository->getById($notification_template_create_id);
+                
+                $plugin_setting = $crmAPI->get("plugin/setting/$notification_template_create->plugin_setting_id");
+                $plugin_setting_api_key = $plugin_setting->data->api_key;
+
+                $textFormat = new TextFormat($notification_template_create->message);
+                $messageFormat = $textFormat->getMessage();
+                
+                $textMessage = new TextMessage($messageFormat, $customer_pipeline);
+                $message = $textMessage->getMessage();
+
+                $whatsappHeaders = [
+                    'api-key' => $plugin_setting_api_key,
+                ];
+
+                $crmAPI->create("whatsapp/send", [
+                    'phone' => $customer_pipeline->customer->phone,
+                    'message' => $message,
+                ], $request->token, $whatsappHeaders);
+            }
             
             return JsonResponse::success($result, "Data berhasil ditambahkan");
         } catch (Throwable $th) {
@@ -292,6 +431,24 @@ class TicketController extends Controller
                 return JsonResponse::errorValidation($errors);
             }
 
+            // Check if ticket exist
+            // ticketExist variable will be null if ticket not exist
+            // ticketExist variable will be object if ticket exist
+            $ticketExist = $this->ticketRepository->getTicketById($id);
+
+            // Return error if ticket not exist and ticket company id not equal request company id
+            if (!$ticketExist || $ticketExist->company_id != $request->company_id) {
+                return JsonResponse::notFound("Data tidak ditemukan");
+            }
+
+            // Update ticket status
+            $result = $this->ticketRepository->updateStatus($id, $request->input('status'));
+
+            $crmAPI = new CrmAPI();
+
+            // Destroy ticket solution by ticket id
+            $ticketSolutionRepository->destroyByTicketId($id);
+
             // Check if status is 'resolved'
             if ($request->input('status') === "resolved") {
                 // Validate request data
@@ -306,33 +463,41 @@ class TicketController extends Controller
                     return JsonResponse::errorValidation($errors);
                 }
 
-                // Destroy ticket solution by ticket id
-                $ticketSolutionRepository->destroyByTicketId($id);
-
                 // Store ticket solution
                 $ticketSolutionRepository->store([
                     'ticket_id' => $id,
                     'solution' => $request->input('solution'),
                     'nominal' => $request->input('nominal'),
                 ]);
-            } else {
-                // Destroy ticket solution by ticket id
-                $ticketSolutionRepository->destroyByTicketId($id);
+
+                if (count($ticketExist->notifications) > 0) {
+                    $template_close = $ticketExist->notifications->where('templates.type', 'close')->first()->templates ?? null;
+
+                    if ($template_close) {
+                        $crm_customer_pipeline = $crmAPI->get("crm/customer/pipeline/detail/$ticketExist->customer_pipeline_id");
+                        $customer_pipeline = $crm_customer_pipeline->data;
+
+                        $plugin_setting = $crmAPI->get("plugin/setting/$template_close->plugin_setting_id");
+                        $plugin_setting_api_key = $plugin_setting->data->api_key;
+
+                        $textFormat = new TextFormat($template_close->message);
+                        $messageFormat = $textFormat->getMessage();
+                        
+                        $textMessage = new TextMessage($messageFormat, $customer_pipeline);
+                        $message = $textMessage->getMessage();
+                    
+                        $whatsappHeaders = [
+                            'api-key' => $plugin_setting_api_key,
+                        ];
+                        
+                        $crmAPI->create("whatsapp/send", [
+                            'phone' => $customer_pipeline->customer->phone,
+                            'message' => $message,
+                        ], $request->token, $whatsappHeaders);
+                    }
+                }
             }
-
-            // Check if ticket exist
-            // ticketExist variable will be null if ticket not exist
-            // ticketExist variable will be object if ticket exist
-            $ticketExist = $this->ticketRepository->getTicketById($id);
-
-            // Return error if ticket not exist and ticket company id not equal request company id
-            if (!$ticketExist || $ticketExist->company_id != $request->company_id) {
-                return JsonResponse::notFound("Data tidak ditemukan");
-            }
-
-            // Update ticket status
-            $result = $this->ticketRepository->updateStatus($id, $request->input('status'));
-
+            
             return JsonResponse::success($result, "Data berhasil diubah");
         } catch (Throwable $th) {
             return JsonResponse::error($th->getMessage()); 

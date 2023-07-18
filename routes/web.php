@@ -41,6 +41,16 @@ $router->group(['prefix' => 'api', 'as' => 'api.'], function() use ($router) {
                 $router->post('/{id}', ['as' => 'store', 'uses' => 'TicketCommentController@store']);
                 $router->put('/{id}', ['as' => 'update', 'uses' => 'TicketCommentController@update']);
             });
+
+            // ticket templates API
+            $router->group(['prefix' => 'templates', 'as' => 'templates.'], function() use ($router) {
+                $router->get('/detail/{id}', ['as' => 'show.', 'uses' => 'TicketNotificationTemplateController@show']);
+                $router->get('/datatable', ['as' => 'all.', 'uses' => 'TicketNotificationTemplateController@all']);
+                $router->post('/', ['as' => 'store', 'uses' => 'TicketNotificationTemplateController@store']);
+                $router->put('/{id}', ['as' => 'update', 'uses' => 'TicketNotificationTemplateController@update']);
+                $router->delete('/{id}', ['as' => 'update', 'uses' => 'TicketNotificationTemplateController@destroy']);
+                $router->delete('/destroy/batch', ['as' => 'update', 'uses' => 'TicketNotificationTemplateController@destroyBatch']);
+            });
         });
 
     });
