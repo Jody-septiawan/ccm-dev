@@ -27,4 +27,9 @@ class Ticket extends Model
     {
         return $this->hasOne(TicketScore::class, "ticket_id");
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(TicketNotification::class, "ticket_id");
+    }
 }
