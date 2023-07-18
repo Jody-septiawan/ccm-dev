@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Repositories\TicketNotificationTemplateRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Libs\Json\JsonResponse;
+use App\Services\ExternalAPIs\CrmAPI;
 
 class TicketNotificationTemplateController extends Controller
 {
@@ -45,6 +46,13 @@ class TicketNotificationTemplateController extends Controller
             // Get all ticket notification template
             $ticketTemplates = $this->ticketNotificationTemplateRepository->getDatatable($request);
 
+            $crmAPI = new CrmAPI();
+
+            foreach ($ticketTemplates as $item) {
+                $plugin_setting = $crmAPI->get("plugin/setting/$item->plugin_setting_id");
+                $item->plugin_setting = $plugin_setting->data;
+            }
+
             return $ticketTemplates;
         } catch (Throwable $th) {
             return JsonResponse::error($th->getMessage()); 
@@ -55,10 +63,15 @@ class TicketNotificationTemplateController extends Controller
      * Display a data ticket notification template by id.
      * ---------------------------------------------------
      * Flow:
-     * 1. Get all ticket notification template
+     * 1. Validate request data
+     * 2. Check if data is not equal validation return error
+     * 3. Get ticket notification template by id
+     * 4. Check if ticket notification template is not found return error
+     * 5. Return ticket notification template
      * ---------------------------------------------------
      *
      * @param Request $request
+     * @param string $id
      * 
      * @return void
      */
@@ -83,6 +96,12 @@ class TicketNotificationTemplateController extends Controller
             if (!$ticketTemplate || $ticketTemplate->company_id != $request->company_id) {
                 return JsonResponse::notFound("Data tidak ditemukan");
             }
+
+            $crmAPI = new CrmAPI();
+    
+            // Get plugin setting
+            $plugin_setting = $crmAPI->get("plugin/setting/$ticketTemplate->plugin_setting_id");
+            $ticketTemplate->plugin_setting = $plugin_setting->data;
 
             return JsonResponse::success($ticketTemplate);
         } catch (Throwable $th) {
