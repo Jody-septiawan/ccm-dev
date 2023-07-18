@@ -193,7 +193,7 @@ class TicketController extends Controller
                 // Count ticket exist by company_id
                  $countTicket = $this->ticketRepository->countCompanyTicket($company_id);
 
-                // Add 1 to count ticket
+                // Sum count ticket with iterasi
                 // Generate ticket number with format TICKET{company_id}{count_ticket}
                 $ticketNumber = 'TICKET' . sprintf('%03d', $company_id) . sprintf('%03d', $countTicket + $iterasi);
 
