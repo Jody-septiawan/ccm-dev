@@ -29,7 +29,7 @@ class TicketCommentController extends Controller
      * ------------------------------------
      *
      * @param Request $request
-     * @param StorageService $storageService
+     * @param UploadFileService $uploadFile
      * @param TicketCommentAttachmentRepository $ticketCommentAttachmentRepository
      * @param string $id => ticket id
      * 
@@ -122,13 +122,13 @@ class TicketCommentController extends Controller
      * ------------------------------------
      *
      * @param Request $request
-     * @param StorageService $storageService
+     * @param UploadFileService $uploadFile
      * @param TicketCommentAttachmentRepository $ticketCommentAttachmentRepository
      * @param string $id => ticket comment id
      * 
      * @return void
      */
-    public function update(Request $request, StorageService $storageService, TicketCommentAttachmentRepository $ticketCommentAttachmentRepository, string $id)
+    public function update(Request $request, UploadFileService $uploadFile, TicketCommentAttachmentRepository $ticketCommentAttachmentRepository, string $id)
     {
         try {
             // Merge $id parameter to request data
@@ -185,9 +185,14 @@ class TicketCommentController extends Controller
             if ($files) {
                 // Looping files
                 foreach ($files as $file) {
-                    // Store file to storage
-                    $filePath = $storageService->storage()->put('ticket_comment_attachment', $file, 'public');
+                    // Init file url path
                     $urlPath = null;
+                    // Get file size and type
+                    $fileSize = $file->getSize();
+                    $fileType = $file->getMimeType();
+
+                    // Store file to storage
+                    $filePath = $uploadFile->save('ticket_comment_attachment', $file);
             
                     // Check if app environment is production
                     if (app()->environment('production')) {
@@ -195,11 +200,11 @@ class TicketCommentController extends Controller
                         $urlPath = config('app.do_space') . $filePath;
                     } else {
                         // Get file url from storage
-                        $urlPath = url('storage/' . $filePath);
+                        $urlPath = url($filePath);
                     }
 
                     // Store ticket attachment data
-                    $ticketCommentAttachmentRepository->store($id, $urlPath, $filePath, $file->getSize(), $file->getMimeType());
+                    $ticketCommentAttachmentRepository->store($id, $urlPath, $filePath, $fileSize, $fileType);
                 }
             }
 
