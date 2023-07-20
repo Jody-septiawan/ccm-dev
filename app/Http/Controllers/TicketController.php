@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Libs\Json\JsonResponse;
+use App\Libs\TicketNumberGenerator;
 use App\Repositories\TicketRepository;
 use App\Repositories\TicketAttachmentRepository;
 use App\Repositories\TicketSolutionRepository;
@@ -285,12 +286,31 @@ class TicketController extends Controller
             $user_id = $request->input('user_id');
             $company_id = $request->company_id;
 
-            // Generate ticket number
-            // Count ticket exist by company_id
-            // Add 1 to count ticket
-            // Generate ticket number with format TICKET{company_id}{count_ticket}
-            $countTicket = $this->ticketRepository->countCompanyTicket($company_id);
-            $ticketNumber = 'TICKET' . sprintf('%03d', $company_id) . sprintf('%03d', $countTicket + 1);
+            // ========= Generate ticket number =========
+            // Data preparation
+            $ticketNumber = null;
+            $arrayTicket = [];
+            $iterasi = 1;
+
+            // Looping to generate ticket number
+            do {
+                // Count ticket exist by company_id
+                 $countTicket = $this->ticketRepository->countCompanyTicket($company_id);
+
+                // Sum count ticket with iterasi
+                $ticketNumber = TicketNumberGenerator::generate($company_id, $countTicket + $iterasi);
+
+                // Get ticket data by ticket number
+                $ticketExist = $this->ticketRepository->getTicketById($ticketNumber);
+                
+                // Check if ticket number exist
+                if ($ticketExist)
+                {
+                    $ticketNumber = null;
+                    $iterasi++;
+                }
+            } while ($ticketNumber == null);
+            // ========= End generate ticket number ========= 
 
             // Collect data to store
             $data = [
