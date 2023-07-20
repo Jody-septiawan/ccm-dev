@@ -33,7 +33,6 @@ class TextMessage
         $invoice = $customer_pipeline->external_id;
         $resi = $customer_pipeline->awb;
         $ticketUrl = Config::get('crm_gabungin.api_url') . '/ticket/' . $ticket->ticket_number;
-        // $ticketUrl = env('API_URL_CRM_GABUNGIN', 'http://localhost:8001') . '/ticket/' . $ticket->ticket_number;
 
         $with_customer = $this->isContainData('customer.', $this->message);
         if ($with_customer) {
