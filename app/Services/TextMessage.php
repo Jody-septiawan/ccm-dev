@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Services\ExternalAPIs\CrmAPI;
+use Illuminate\Support\Facades\Config;
 
 class TextMessage
 {
@@ -31,7 +32,8 @@ class TextMessage
         $customerName = $customer_pipeline->customer->name;
         $invoice = $customer_pipeline->external_id;
         $resi = $customer_pipeline->awb;
-        $ticketUrl = env('API_URL_CRM_GABUNGIN') . '/ticket/' . $ticket->ticket_number;
+        $ticketUrl = Config::get('crm_gabungin.api_url') . '/ticket/' . $ticket->ticket_number;
+        // $ticketUrl = env('API_URL_CRM_GABUNGIN', 'http://localhost:8001') . '/ticket/' . $ticket->ticket_number;
 
         $with_customer = $this->isContainData('customer.', $this->message);
         if ($with_customer) {
