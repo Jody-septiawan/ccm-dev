@@ -12,23 +12,26 @@ class TextMessage
      *
      * @param string $message
      * @param object $customer_pipeline
+     * @param object $ticket
      */
-    public function __construct(string $message,object $customer_pipeline)
+    public function __construct(string $message,object $customer_pipeline, object $ticket)
     {
         $this->message = $message;
-        $this->replaceMessage($customer_pipeline);
+        $this->replaceMessage($customer_pipeline, $ticket);
     }
 
     /**
      * Replace message
      *
      * @param object $customer_pipeline
+     * @param object $ticket
      */
-    private function replaceMessage(object $customer_pipeline)
+    private function replaceMessage(object $customer_pipeline, object $ticket)
     {
         $customerName = $customer_pipeline->customer->name;
         $invoice = $customer_pipeline->external_id;
         $resi = $customer_pipeline->awb;
+        $ticketUrl = env('API_URL_CRM_GABUNGIN') . '/ticket/' . $ticket->ticket_number;
 
         $with_customer = $this->isContainData('customer.', $this->message);
         if ($with_customer) {
@@ -43,6 +46,11 @@ class TextMessage
         $with_resi = $this->isContainData('resi', $this->message);
         if ($with_resi) {
             $this->message = str_replace("%resi%", $resi ?? "-", $this->message);
+        }
+
+        $with_ticket = $this->isContainData('ticket.', $this->message);
+        if ($with_ticket) {
+            $this->message = str_replace("%ticket.url%", $ticketUrl ?? "-", $this->message);
         }
     }
 

@@ -378,7 +378,7 @@ class TicketController extends Controller
                 $textFormat = new TextFormat($notification_template_create->message);
                 $messageFormat = $textFormat->getMessage();
                 
-                $textMessage = new TextMessage($messageFormat, $customer_pipeline);
+                $textMessage = new TextMessage($messageFormat, $customer_pipeline, $result);
                 $message = $textMessage->getMessage();
 
                 $whatsappHeaders = [
@@ -483,7 +483,7 @@ class TicketController extends Controller
                         $textFormat = new TextFormat($template_close->message);
                         $messageFormat = $textFormat->getMessage();
                         
-                        $textMessage = new TextMessage($messageFormat, $customer_pipeline);
+                        $textMessage = new TextMessage($messageFormat, $customer_pipeline, $ticketExist);
                         $message = $textMessage->getMessage();
                     
                         $whatsappHeaders = [
