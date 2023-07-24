@@ -163,8 +163,16 @@ class TicketCommentController extends Controller
             $deleteAttachmentIds = $request->input('deleteAttachmentIds');
             $files = $request->file('newAttachments');
 
+            $deleteAttachmentIds = array_filter($deleteAttachmentIds, function ($id) {
+                return $id !== "" && $id !== null;
+            });
+
             // Check if deleteAttachmentIds is not null
             if ($deleteAttachmentIds) {
+                $deleteAttachmentIds = array_map(function ($item) {
+                    return intval($item);
+                }, explode(",", $deleteAttachmentIds[0]));
+
                 // Looping ids
                 foreach ($deleteAttachmentIds as $deleteAttachmentId) {
                     // Get attachment data by id
